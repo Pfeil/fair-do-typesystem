@@ -1,0 +1,674 @@
+# =============================================================================
+# FDO Type System Reconstruction
+# Source: FDO Architecture Specification (fdo-architecture-spec)
+# =============================================================================
+# This file reconstructs the FDO type system as described in the specification.
+# It is designed to be:
+#   - Compact and human-readable
+#   - Machine-parseable for visualization (e.g., graph rendering)
+#   - Extensible for future additions
+# =============================================================================
+
+metadata:
+  title: "FDO Type System"
+  source: "FDO Architecture Specification"
+  version: "draft-reconstruction"
+  description: >
+    Reconstruction of the FDO type system including profiles, attribute
+    definitions, validation mechanisms, FDO types, and syntax primitives.
+
+# =============================================================================
+# Profiles
+# =============================================================================
+# Profiles define the schema for FDO Records. Each profile is itself an FDO
+# and is identified by a PID. Profiles can extend other profiles, forming
+# a directed acyclic graph (DAG).
+
+profiles:
+  - id: "0.FDO/Root"
+    name: "Root Profile"
+    description: >
+      The minimal profile that all FDOs must validate against. Contains the
+      three mandatory attribute definitions.
+    fdo_type: "FDO_Profile"
+    extends: []
+    deny_additional_attributes: false
+    attributes:
+      - ref: "0.FDO/Type"
+        cardinality: "1..*"
+      - ref: "0.FDO/Profile"
+        cardinality: "1..*"
+      - ref: "0.FDO/Data"
+        cardinality: "1..*"
+
+  - id: "0.FDO/ProfileDef"
+    name: "Profile Definition Profile"
+    description: >
+      Template for all FDO profiles. Defines the attribute definitions that
+      must be instantiated in the FDO Record of each profile.
+    fdo_type: "FDO_Profile"
+    extends:
+      - "0.FDO/Root"
+    deny_additional_attributes: false
+    attributes:
+      - ref: "0.FDO/Type"
+        cardinality: "1..*"
+      - ref: "0.FDO/Profile"
+        cardinality: "1..*"
+      - ref: "0.FDO/Data"
+        cardinality: "1..*"
+      - ref: "0.FDO/Name"
+        cardinality: "1..*"
+      - ref: "0.FDO/Description"
+        cardinality: "0..*"
+      - ref: "0.FDO/Attribute"
+        cardinality: "3..*"
+      - ref: "0.FDO/Extends"
+        cardinality: "0..*"
+      - ref: "0.FDO/denyAdditionalAttributes"
+        cardinality: "0..1"
+
+  - id: "0.FDO/AttributeDef"
+    name: "Attribute Definition Profile"
+    description: >
+      Template for all FDO attribute definitions. Defines the attribute
+      definitions that must be instantiated in the FDO Record of each
+      attribute definition.
+    fdo_type: "FDO_Attribute_Definition"
+    extends:
+      - "0.FDO/Root"
+    deny_additional_attributes: false
+    attributes:
+      - ref: "0.FDO/Type"
+        cardinality: "1..*"
+      - ref: "0.FDO/Profile"
+        cardinality: "1..*"
+      - ref: "0.FDO/Data"
+        cardinality: "1..*"
+      - ref: "0.FDO/Name"
+        cardinality: "1..*"
+      - ref: "0.FDO/Description"
+        cardinality: "0..*"
+      - ref: "0.FDO/ValidationMechanism"
+        cardinality: "1"
+      - ref: "0.FDO/DataType"
+        cardinality: "0..*"
+      - ref: "0.FDO/Cardinality"
+        cardinality: "1"
+
+  - id: "0.FDO/SyntaxDef"
+    name: "Syntax Definition Profile"
+    description: >
+      Template for all FDO syntax definitions. Defines the attribute
+      definitions that must be instantiated in the FDO Record of each
+      syntax definition.
+    fdo_type: "FDO_Syntax_Definition"
+    extends:
+      - "0.FDO/Root"
+    deny_additional_attributes: false
+    attributes:
+      - ref: "0.FDO/Type"
+        cardinality: "1..*"
+      - ref: "0.FDO/Profile"
+        cardinality: "1..*"
+      - ref: "0.FDO/Data"
+        cardinality: "1..*"
+      - ref: "0.FDO/Name"
+        cardinality: "1..*"
+      - ref: "0.FDO/Description"
+        cardinality: "0..*"
+      - ref: "0.FDO/PrimitiveDataType"
+        cardinality: "1"
+      - ref: "0.FDO/Regex"
+        cardinality: "0..1"
+      - ref: "0.FDO/NumericInterval"
+        cardinality: "0..1"
+      - ref: "0.FDO/Whitelist"
+        cardinality: "0..*"
+      - ref: "0.FDO/Blacklist"
+        cardinality: "0..*"
+
+# =============================================================================
+# Attribute Definitions
+# =============================================================================
+# Each attribute definition is itself an FDO. It specifies syntactic rules,
+# semantic meaning, cardinality, and validation mechanism for an attribute.
+
+attribute_definitions:
+  # --- Mandatory attributes (defined in 0.FDO/Root) ---
+
+  - pid: "0.FDO/Type"
+    name: "FDO Type"
+    description: >
+      Specifies the type of the resource being represented by the FDO.
+      Gives a hint to a machine how the object may be processed.
+    profile: "0.FDO/AttributeDef"
+    validation_mechanism: "Syntax"
+    data_type_refs:
+      - kind: "syntax_definition"
+        ref: "0.FDO/StringSyntax"  # inferred: type values are strings
+    cardinality_rule: "1..*"
+
+  - pid: "0.FDO/Profile"
+    name: "FDO Profile"
+    description: >
+      Links to at least one FDO Profile which the FDO complies to.
+      The value must be a reference to an FDO that instantiates 0.FDO/ProfileDef.
+    profile: "0.FDO/AttributeDef"
+    validation_mechanism: "ProfileReference"
+    data_type_refs:
+      - kind: "profile"
+        ref: "0.FDO/ProfileDef"
+    cardinality_rule: "1..*"
+
+  - pid: "0.FDO/Data"
+    name: "FDO Data"
+    description: >
+      Points to data (bit-sequence) associated with the FDO. Uses attribute
+      referencing to support multiple data representations (external URL,
+      inline data, or reference to another FDO).
+    profile: "0.FDO/AttributeDef"
+    validation_mechanism: "AttributeReference"
+    data_type_refs: []  # any attribute can be referenced (no whitelist)
+    cardinality_rule: "1..*"
+
+  # --- Profile definition attributes ---
+
+  - pid: "0.FDO/Name"
+    name: "Name"
+    description: >
+      Human-readable and localized label(s) for the FDO.
+    profile: "0.FDO/AttributeDef"
+    validation_mechanism: "Syntax"
+    data_type_refs:
+      - kind: "syntax_definition"
+        ref: "0.FDO/StringSyntax"
+    cardinality_rule: "1..*"
+
+  - pid: "0.FDO/Description"
+    name: "Description"
+    description: >
+      Human-readable and localized description(s) for the FDO.
+    profile: "0.FDO/AttributeDef"
+    validation_mechanism: "Syntax"
+    data_type_refs:
+      - kind: "syntax_definition"
+        ref: "0.FDO/StringSyntax"
+    cardinality_rule: "0..*"
+
+  - pid: "0.FDO/Attribute"
+    name: "Attribute"
+    description: >
+      Defines the list of attribute definitions that must be instantiated
+      in any FDO instantiating the respective profile. Used in profiles
+      to declare their schema.
+    profile: "0.FDO/AttributeDef"
+    validation_mechanism: "Syntax"
+    data_type_refs:
+      - kind: "syntax_definition"
+        ref: "0.FDO/PIDSyntax"  # value is a PID resolving to an attribute definition
+    cardinality_rule: "3..*"
+
+  - pid: "0.FDO/Extends"
+    name: "Extends Profile"
+    description: >
+      Specifies the PID of the parent profile when this profile extends
+      another profile. Enables profile inheritance.
+    profile: "0.FDO/AttributeDef"
+    validation_mechanism: "ProfileReference"
+    data_type_refs:
+      - kind: "profile"
+        ref: "0.FDO/ProfileDef"
+    cardinality_rule: "0..*"
+
+  - pid: "0.FDO/denyAdditionalAttributes"
+    name: "Deny Additional Attributes"
+    description: >
+      Boolean flag indicating whether an FDO instantiating the profile
+      must not have additional attributes beyond those declared in the profile.
+    profile: "0.FDO/AttributeDef"
+    validation_mechanism: "Syntax"
+    data_type_refs:
+      - kind: "syntax_definition"
+        ref: "0.FDO/BooleanSyntax"
+    cardinality_rule: "0..1"
+
+  # --- Attribute definition attributes ---
+
+  - pid: "0.FDO/ValidationMechanism"
+    name: "Validation Mechanism"
+    description: >
+      Specifies how the attribute value is validated. One of: Syntax, Union,
+      InlineCombination, AttributeReference, ProfileReference,
+      ExternalVocabularyReference.
+    profile: "0.FDO/AttributeDef"
+    validation_mechanism: "Syntax"
+    data_type_refs:
+      - kind: "syntax_definition"
+        ref: "0.FDO/ValidationMechanismSyntax"  # whitelist of valid mechanisms
+    cardinality_rule: "1"
+
+  - pid: "0.FDO/DataType"
+    name: "Data Type"
+    description: >
+      Reference to a syntax definition, attribute definition, profile, or
+      external vocabulary namespace, depending on the validation mechanism.
+    profile: "0.FDO/AttributeDef"
+    validation_mechanism: "Syntax"
+    data_type_refs:
+      - kind: "syntax_definition"
+        ref: "0.FDO/PIDSyntax"
+    cardinality_rule: "0..*"
+
+  - pid: "0.FDO/Cardinality"
+    name: "Cardinality"
+    description: >
+      Description of the obligation and repeatability of values in an FDO.
+      Format: ^(\d+)(\.\.(\d+|\*))?$
+    profile: "0.FDO/AttributeDef"
+    validation_mechanism: "Syntax"
+    data_type_refs:
+      - kind: "syntax_definition"
+        ref: "0.FDO/CardinalitySyntax"
+    cardinality_rule: "1"
+
+  # --- Syntax definition attributes ---
+
+  - pid: "0.FDO/PrimitiveDataType"
+    name: "Primitive Data Type"
+    description: >
+      One of: string, number, integer, boolean. All primitives must be
+      supported by all clients.
+    profile: "0.FDO/AttributeDef"
+    validation_mechanism: "Syntax"
+    data_type_refs:
+      - kind: "syntax_definition"
+        ref: "0.FDO/PrimitiveDataTypeSyntax"  # whitelist: string, number, integer, boolean
+    cardinality_rule: "1"
+
+  - pid: "0.FDO/Regex"
+    name: "Regular Expression"
+    description: >
+      ECMA-262 regular expression for string validation. Only applicable
+      when PrimitiveDataType is "string".
+    profile: "0.FDO/AttributeDef"
+    validation_mechanism: "Syntax"
+    data_type_refs:
+      - kind: "syntax_definition"
+        ref: "0.FDO/StringSyntax"
+    cardinality_rule: "0..1"
+
+  - pid: "0.FDO/NumericInterval"
+    name: "Numeric Interval"
+    description: >
+      Range constraint. For strings: range of value length. For numbers/integers:
+      interval that restricts the attribute value.
+    profile: "0.FDO/AttributeDef"
+    validation_mechanism: "Syntax"
+    data_type_refs:
+      - kind: "syntax_definition"
+        ref: "0.FDO/IntervalSyntax"
+    cardinality_rule: "0..1"
+
+  - pid: "0.FDO/Whitelist"
+    name: "Whitelist"
+    description: >
+      Exhaustive list of allowed values. If repeated, gives all permitted values.
+    profile: "0.FDO/AttributeDef"
+    validation_mechanism: "Syntax"
+    data_type_refs:
+      - kind: "syntax_definition"
+        ref: "0.FDO/StringSyntax"
+    cardinality_rule: "0..*"
+
+  - pid: "0.FDO/Blacklist"
+    name: "Blacklist"
+    description: >
+      Non-exhaustive list of forbidden values. Other restrictions still apply.
+    profile: "0.FDO/AttributeDef"
+    validation_mechanism: "Syntax"
+    data_type_refs:
+      - kind: "syntax_definition"
+        ref: "0.FDO/StringSyntax"
+    cardinality_rule: "0..*"
+
+  # --- Type system attributes ---
+
+  - pid: "0.FDO/DerivedFromType"
+    name: "Derived From Type"
+    description: >
+      Indicates that an FDO type is derived from another type. The value
+      is a PID that resolves to the parent type.
+    profile: "0.FDO/AttributeDef"
+    validation_mechanism: "Syntax"
+    data_type_refs:
+      - kind: "syntax_definition"
+        ref: "0.FDO/PIDSyntax"
+    cardinality_rule: "0..*"
+
+# =============================================================================
+# Validation Mechanisms
+# =============================================================================
+# The six validation mechanisms defined in the specification.
+
+validation_mechanisms:
+  - name: "Syntax"
+    description: >
+      Value must validate against a referenced syntax definition. The
+      attribute definition contains 0.FDO/DataType pointing to a syntax
+      definition.
+    data_type_ref_kind: "syntax_definition"
+    spec_reference: "[R5-8]"
+
+  - name: "Union"
+    description: >
+      Value must comply with the syntactic rules of at least one of several
+      referenced attribute definitions ("any of"). The attribute definition
+      contains 0.FDO/DataType for each candidate attribute definition.
+    data_type_ref_kind: "attribute_definition"
+    spec_reference: "[R5-9]"
+
+  - name: "InlineCombination"
+    description: >
+      Value must be an inline combination satisfying all of several referenced
+      attribute definitions ("all of"). Format (e.g., JSON, JSON-LD) may depend
+      on implementation.
+    data_type_ref_kind: "attribute_definition"
+    spec_reference: "[R5-10]"
+
+  - name: "ProfileReference"
+    description: >
+      Value must be a validated reference to another FDO following a specific
+      profile, or an inline serialization of such an FDO.
+    data_type_ref_kind: "profile"
+    spec_reference: "[R7-4] - [R7-6]"
+
+  - name: "AttributeReference"
+    description: >
+      Value redirects to another attribute within the same FDO record. Used
+      by 0.FDO/Data to support multiple data representations. The referenced
+      attribute must be instantiated in the same record.
+    data_type_ref_kind: "attribute_definition"
+    spec_reference: "[R7-7] - [R7-11]"
+
+  - name: "ExternalVocabularyReference"
+    description: >
+      Value references a namespace from an external vocabulary (e.g., schema.org).
+      Terms from that vocabulary can then be used as attributes in the record.
+    data_type_ref_kind: "external_vocabulary"
+    spec_reference: "[R7-12] - [R7-14]"
+
+# =============================================================================
+# FDO Types
+# =============================================================================
+# FDO types signal default processing semantics. Special types are assigned
+# to the meta-objects of the type system.
+
+fdo_types:
+  - name: "FDO_Profile"
+    description: >
+      Assigned to FDOs that are profiles (i.e., FDOs whose records instantiate
+      0.FDO/ProfileDef).
+    assigned_to:
+      - kind: "profile"
+        ref: "0.FDO/ProfileDef"
+
+  - name: "FDO_Attribute_Definition"
+    description: >
+      Assigned to FDOs that are attribute definitions (i.e., FDOs whose records
+      instantiate 0.FDO/AttributeDef).
+    assigned_to:
+      - kind: "profile"
+        ref: "0.FDO/AttributeDef"
+
+  - name: "FDO_Syntax_Definition"
+    description: >
+      Assigned to FDOs that are syntax definitions (i.e., FDOs whose records
+      instantiate 0.FDO/SyntaxDef).
+    assigned_to:
+      - kind: "profile"
+        ref: "0.FDO/SyntaxDef"
+
+  - name: "FDO_Type_Definition"
+    description: >
+      Assigned to FDOs that represent FDO type definitions. Communities may
+      define their own types as FDOs with this type.
+    assigned_to: []
+
+# =============================================================================
+# Syntax Primitives
+# =============================================================================
+# The four primitive data types that all clients must support.
+
+syntax_primitives:
+  - name: "string"
+    description: "A text string value."
+  - name: "number"
+    description: "A real number value."
+  - name: "integer"
+    description: "An integer value."
+  - name: "boolean"
+    description: "A true/false value."
+
+# =============================================================================
+# Inferred Syntax Definitions
+# =============================================================================
+# These are not explicitly defined in the specification but are implied by
+# the attribute definitions that reference them. They are included here for
+# completeness of the type system reconstruction.
+
+inferred_syntax_definitions:
+  - pid: "0.FDO/StringSyntax"
+    name: "String Syntax"
+    description: "Basic string syntax definition."
+    primitive_data_type: "string"
+
+  - pid: "0.FDO/PIDSyntax"
+    name: "PID Syntax"
+    description: "Syntax for PID values (strings following PID format)."
+    primitive_data_type: "string"
+    regex: ".*"  # PID format depends on the PID system used
+
+  - pid: "0.FDO/BooleanSyntax"
+    name: "Boolean Syntax"
+    description: "Basic boolean syntax definition."
+    primitive_data_type: "boolean"
+
+  - pid: "0.FDO/ValidationMechanismSyntax"
+    name: "Validation Mechanism Syntax"
+    description: "Whitelist of valid validation mechanism names."
+    primitive_data_type: "string"
+    whitelist:
+      - "Syntax"
+      - "Union"
+      - "InlineCombination"
+      - "AttributeReference"
+      - "ProfileReference"
+      - "ExternalVocabularyReference"
+
+  - pid: "0.FDO/PrimitiveDataTypeSyntax"
+    name: "Primitive Data Type Syntax"
+    description: "Whitelist of valid primitive data type names."
+    primitive_data_type: "string"
+    whitelist:
+      - "string"
+      - "number"
+      - "integer"
+      - "boolean"
+
+  - pid: "0.FDO/CardinalitySyntax"
+    name: "Cardinality Syntax"
+    description: "Regex for cardinality format."
+    primitive_data_type: "string"
+    regex: "^(\\d+)(\\.(\\d+|\\*))?$"
+
+  - pid: "0.FDO/IntervalSyntax"
+    name: "Interval Syntax"
+    description: "Syntax for numeric interval values."
+    primitive_data_type: "string"
+
+# =============================================================================
+# Relationships Summary (for visualization)
+# =============================================================================
+# This section provides an explicit edge list for graph visualization tools.
+
+graph_edges:
+  # Profile inheritance (extends)
+  - from: "0.FDO/ProfileDef"
+    to: "0.FDO/Root"
+    type: "extends"
+
+  - from: "0.FDO/AttributeDef"
+    to: "0.FDO/Root"
+    type: "extends"
+
+  - from: "0.FDO/SyntaxDef"
+    to: "0.FDO/Root"
+    type: "extends"
+
+  # Profile contains attribute definition
+  - from: "0.FDO/Root"
+    to: "0.FDO/Type"
+    type: "contains"
+
+  - from: "0.FDO/Root"
+    to: "0.FDO/Profile"
+    type: "contains"
+
+  - from: "0.FDO/Root"
+    to: "0.FDO/Data"
+    type: "contains"
+
+  - from: "0.FDO/ProfileDef"
+    to: "0.FDO/Name"
+    type: "contains"
+
+  - from: "0.FDO/ProfileDef"
+    to: "0.FDO/Description"
+    type: "contains"
+
+  - from: "0.FDO/ProfileDef"
+    to: "0.FDO/Attribute"
+    type: "contains"
+
+  - from: "0.FDO/ProfileDef"
+    to: "0.FDO/Extends"
+    type: "contains"
+
+  - from: "0.FDO/ProfileDef"
+    to: "0.FDO/denyAdditionalAttributes"
+    type: "contains"
+
+  - from: "0.FDO/AttributeDef"
+    to: "0.FDO/ValidationMechanism"
+    type: "contains"
+
+  - from: "0.FDO/AttributeDef"
+    to: "0.FDO/DataType"
+    type: "contains"
+
+  - from: "0.FDO/AttributeDef"
+    to: "0.FDO/Cardinality"
+    type: "contains"
+
+  - from: "0.FDO/SyntaxDef"
+    to: "0.FDO/PrimitiveDataType"
+    type: "contains"
+
+  - from: "0.FDO/SyntaxDef"
+    to: "0.FDO/Regex"
+    type: "contains"
+
+  - from: "0.FDO/SyntaxDef"
+    to: "0.FDO/NumericInterval"
+    type: "contains"
+
+  - from: "0.FDO/SyntaxDef"
+    to: "0.FDO/Whitelist"
+    type: "contains"
+
+  - from: "0.FDO/SyntaxDef"
+    to: "0.FDO/Blacklist"
+    type: "contains"
+
+  # Attribute definition uses validation mechanism
+  - from: "0.FDO/Type"
+    to: "Syntax"
+    type: "uses_validation"
+
+  - from: "0.FDO/Profile"
+    to: "ProfileReference"
+    type: "uses_validation"
+
+  - from: "0.FDO/Data"
+    to: "AttributeReference"
+    type: "uses_validation"
+
+  - from: "0.FDO/Name"
+    to: "Syntax"
+    type: "uses_validation"
+
+  - from: "0.FDO/Description"
+    to: "Syntax"
+    type: "uses_validation"
+
+  - from: "0.FDO/Attribute"
+    to: "Syntax"
+    type: "uses_validation"
+
+  - from: "0.FDO/Extends"
+    to: "ProfileReference"
+    type: "uses_validation"
+
+  - from: "0.FDO/denyAdditionalAttributes"
+    to: "Syntax"
+    type: "uses_validation"
+
+  - from: "0.FDO/ValidationMechanism"
+    to: "Syntax"
+    type: "uses_validation"
+
+  - from: "0.FDO/DataType"
+    to: "Syntax"
+    type: "uses_validation"
+
+  - from: "0.FDO/Cardinality"
+    to: "Syntax"
+    type: "uses_validation"
+
+  - from: "0.FDO/PrimitiveDataType"
+    to: "Syntax"
+    type: "uses_validation"
+
+  - from: "0.FDO/Regex"
+    to: "Syntax"
+    type: "uses_validation"
+
+  - from: "0.FDO/NumericInterval"
+    to: "Syntax"
+    type: "uses_validation"
+
+  - from: "0.FDO/Whitelist"
+    to: "Syntax"
+    type: "uses_validation"
+
+  - from: "0.FDO/Blacklist"
+    to: "Syntax"
+    type: "uses_validation"
+
+  - from: "0.FDO/DerivedFromType"
+    to: "Syntax"
+    type: "uses_validation"
+
+  # FDO type assigned to profile
+  - from: "FDO_Profile"
+    to: "0.FDO/ProfileDef"
+    type: "assigned_to"
+
+  - from: "FDO_Attribute_Definition"
+    to: "0.FDO/AttributeDef"
+    type: "assigned_to"
+
+  - from: "FDO_Syntax_Definition"
+    to: "0.FDO/SyntaxDef"
+    type: "assigned_to"
