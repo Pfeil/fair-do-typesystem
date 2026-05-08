@@ -1,0 +1,32 @@
+{
+  "0.FDO/Type": [
+    "FDO_Attribute_Definition"
+  ],
+  "0.FDO/Profile": [
+    "0.FDO/AttributeDef"
+  ],
+  "0.FDO/Data": [
+    "Not_Applicable"
+  ],
+  "0.FDO/Name": [
+    {
+      "value": "Validation Mechanism",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/Description": [
+    {
+      "value": "Specifies the validation mechanism for this attribute definition. One of: Syntax (see [R5-8]), Union (see [R5-9]), InlineCombination (see [R5-10]), AttributeReference, ProfileReference, or ExternalVocabularyReference.",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/ValidationMechanism": [
+    "Whitelist"
+  ],
+  "0.FDO/DataType": [
+    "syntax/custom/ValidationMechanismSyntax.json"
+  ],
+  "0.FDO/Cardinality": [
+    "1"
+  ]
+}

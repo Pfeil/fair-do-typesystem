@@ -1,0 +1,32 @@
+{
+  "0.FDO/Type": [
+    "FDO_Attribute_Definition"
+  ],
+  "0.FDO/Profile": [
+    "0.FDO/AttributeDef"
+  ],
+  "0.FDO/Data": [
+    "Not_Applicable"
+  ],
+  "0.FDO/Name": [
+    {
+      "value": "Attribute",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/Description": [
+    {
+      "value": "Defines the list of attribute definitions that MUST be instantiated in any FDO instantiating this profile. The cardinality of the attribute definitions MUST be respected in the FDOs. 0.FDO/Attribute is repeated at least three times, once with each of the values 0.FDO/Type, 0.FDO/Profile, 0.FDO/Data, because these are the mandatory attributes that MUST be contained in any FDO. Additional attributes can be added by further repeating the 0.FDO/Attribute with other values.",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/ValidationMechanism": [
+    "Syntax"
+  ],
+  "0.FDO/DataType": [
+    "0.FDO/StringSyntax"
+  ],
+  "0.FDO/Cardinality": [
+    "3..*"
+  ]
+}

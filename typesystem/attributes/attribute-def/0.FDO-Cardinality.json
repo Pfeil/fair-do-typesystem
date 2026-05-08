@@ -1,0 +1,32 @@
+{
+  "0.FDO/Type": [
+    "FDO_Attribute_Definition"
+  ],
+  "0.FDO/Profile": [
+    "0.FDO/AttributeDef"
+  ],
+  "0.FDO/Data": [
+    "Not_Applicable"
+  ],
+  "0.FDO/Name": [
+    {
+      "value": "Cardinality",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/Description": [
+    {
+      "value": "Description of the obligation and repeatability of values in an FDO. Must follow the regular expression: ^(\\d+)(\\.\\.(\\d+|\\*))?$. Examples: 1 (mandatory), 0..1 (optional), 1..* (mandatory and repeatable), 0..* (optional and repeatable), 2..3 (MUST occur two to three times).",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/ValidationMechanism": [
+    "Syntax"
+  ],
+  "0.FDO/DataType": [
+    "syntax/custom/CardinalitySyntax.json"
+  ],
+  "0.FDO/Cardinality": [
+    "1"
+  ]
+}

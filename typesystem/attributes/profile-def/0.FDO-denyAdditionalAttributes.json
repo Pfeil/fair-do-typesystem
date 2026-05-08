@@ -1,0 +1,32 @@
+{
+  "0.FDO/Type": [
+    "FDO_Attribute_Definition"
+  ],
+  "0.FDO/Profile": [
+    "0.FDO/AttributeDef"
+  ],
+  "0.FDO/Data": [
+    "Not_Applicable"
+  ],
+  "0.FDO/Name": [
+    {
+      "value": "Deny Additional Attributes",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/Description": [
+    {
+      "value": "This is an optional boolean flag indicating whether an FDO that instantiates the respective profile MUST NOT have additional attributes than those given by the profile. This restriction is only active if the value is set to a truthy boolean.",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/ValidationMechanism": [
+    "Syntax"
+  ],
+  "0.FDO/DataType": [
+    "0.FDO/BooleanSyntax"
+  ],
+  "0.FDO/Cardinality": [
+    "0..1"
+  ]
+}

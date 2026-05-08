@@ -1,0 +1,30 @@
+{
+  "0.FDO/Type": [
+    "FDO_Syntax_Definition"
+  ],
+  "0.FDO/Profile": [
+    "0.FDO/SyntaxDef"
+  ],
+  "0.FDO/Data": [
+    "Not_Applicable"
+  ],
+  "0.FDO/Name": [
+    {
+      "value": "String",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/Description": [
+    {
+      "value": "Basic string data type with no additional constraints. Any valid Unicode string is accepted.",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/PrimitiveDataType": [
+    "string"
+  ],
+  "0.FDO/Regex": [],
+  "0.FDO/NumericInterval": [],
+  "0.FDO/Whitelist": [],
+  "0.FDO/Blacklist": []
+}

@@ -1,0 +1,33 @@
+{
+  "0.FDO/Type": [
+    "FDO_Attribute_Definition"
+  ],
+  "0.FDO/Profile": [
+    "0.FDO/AttributeDef"
+  ],
+  "0.FDO/Data": [
+    "Not_Applicable"
+  ],
+  "0.FDO/Name": [
+    {
+      "value": "Name",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/Description": [
+    {
+      "value": "Human-readable and localized labels for the FDO attribute definition or profile. All of these are viable candidates for referencing the respective definition in FDOs.",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/ValidationMechanism": [
+    "Syntax"
+  ],
+  "0.FDO/DataType": [
+    "0.FDO/StringSyntax"
+  ],
+  "0.FDO/Cardinality": [
+    "1..*"
+  ],
+  "_note": "See 0.FDO-Name.md for uncertainty about localized value structure"
+}

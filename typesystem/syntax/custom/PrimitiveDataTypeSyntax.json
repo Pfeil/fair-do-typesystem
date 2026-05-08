@@ -1,0 +1,35 @@
+{
+  "0.FDO/Type": [
+    "FDO_Syntax_Definition"
+  ],
+  "0.FDO/Profile": [
+    "0.FDO/SyntaxDef"
+  ],
+  "0.FDO/Data": [
+    "Not_Applicable"
+  ],
+  "0.FDO/Name": [
+    {
+      "value": "Primitive Data Type Syntax",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/Description": [
+    {
+      "value": "Defines the allowed primitive data type names. One of: string, number, integer, boolean. All of these primitives MUST be supported by all clients.",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/PrimitiveDataType": [
+    "string"
+  ],
+  "0.FDO/Regex": [],
+  "0.FDO/NumericInterval": [],
+  "0.FDO/Whitelist": [
+    "string",
+    "number",
+    "integer",
+    "boolean"
+  ],
+  "0.FDO/Blacklist": []
+}

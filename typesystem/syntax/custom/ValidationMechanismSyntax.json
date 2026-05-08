@@ -1,0 +1,37 @@
+{
+  "0.FDO/Type": [
+    "FDO_Syntax_Definition"
+  ],
+  "0.FDO/Profile": [
+    "0.FDO/SyntaxDef"
+  ],
+  "0.FDO/Data": [
+    "Not_Applicable"
+  ],
+  "0.FDO/Name": [
+    {
+      "value": "Validation Mechanism Syntax",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/Description": [
+    {
+      "value": "Defines the allowed values for validation mechanisms. One of: Syntax, Union, InlineCombination, AttributeReference, ProfileReference, ExternalVocabularyReference.",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/PrimitiveDataType": [
+    "string"
+  ],
+  "0.FDO/Regex": [],
+  "0.FDO/NumericInterval": [],
+  "0.FDO/Whitelist": [
+    "Syntax",
+    "Union",
+    "InlineCombination",
+    "AttributeReference",
+    "ProfileReference",
+    "ExternalVocabularyReference"
+  ],
+  "0.FDO/Blacklist": []
+}

@@ -1,0 +1,32 @@
+{
+  "0.FDO/Type": [
+    "FDO_Attribute_Definition"
+  ],
+  "0.FDO/Profile": [
+    "0.FDO/AttributeDef"
+  ],
+  "0.FDO/Data": [
+    "Not_Applicable"
+  ],
+  "0.FDO/Name": [
+    {
+      "value": "Whitelist",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/Description": [
+    {
+      "value": "Specifies that a specific value is allowed to instantiate this attribute. If 0.FDO/Whitelist appears multiple times, this gives an exhaustive list of allowed values to instantiate the attribute. No other values than these are permitted.",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/ValidationMechanism": [
+    "Syntax"
+  ],
+  "0.FDO/DataType": [
+    "0.FDO/StringSyntax"
+  ],
+  "0.FDO/Cardinality": [
+    "0..*"
+  ]
+}

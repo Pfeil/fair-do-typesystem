@@ -1,0 +1,33 @@
+{
+  "0.FDO/Type": [
+    "FDO_Profile"
+  ],
+  "0.FDO/Profile": [
+    "0.FDO/ProfileDef"
+  ],
+  "0.FDO/Data": [
+    "Not_Applicable"
+  ],
+  "0.FDO/Name": [
+    {
+      "value": "Profile Definition Profile",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/Description": [
+    {
+      "value": "The profile that all profile definitions must comply with. Defines the structure for creating new FDO profiles.",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/Attribute": [
+    "0.FDO/Type",
+    "0.FDO/Profile",
+    "0.FDO/Data",
+    "0.FDO/Name",
+    "0.FDO/Description",
+    "0.FDO/Attribute",
+    "0.FDO/Extends",
+    "0.FDO/denyAdditionalAttributes"
+  ]
+}

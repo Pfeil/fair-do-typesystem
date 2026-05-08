@@ -1,0 +1,28 @@
+{
+  "0.FDO/Type": [
+    "FDO_Profile"
+  ],
+  "0.FDO/Profile": [
+    "0.FDO/ProfileDef"
+  ],
+  "0.FDO/Data": [
+    "Not_Applicable"
+  ],
+  "0.FDO/Name": [
+    {
+      "value": "Root Profile",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/Description": [
+    {
+      "value": "The minimal profile that every FDO must validate against. Defines the three mandatory attributes: Type, Profile, and Data.",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/Attribute": [
+    "0.FDO/Type",
+    "0.FDO/Profile",
+    "0.FDO/Data"
+  ]
+}

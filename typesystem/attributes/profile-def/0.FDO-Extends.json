@@ -1,0 +1,32 @@
+{
+  "0.FDO/Type": [
+    "FDO_Attribute_Definition"
+  ],
+  "0.FDO/Profile": [
+    "0.FDO/AttributeDef"
+  ],
+  "0.FDO/Data": [
+    "Not_Applicable"
+  ],
+  "0.FDO/Name": [
+    {
+      "value": "Extends",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/Description": [
+    {
+      "value": "If this profile is an extension of another profile, this attribute specifies the PID of the parent profile. To extend a profile P1 by a profile P2, the profile P2 MUST contain an attribute where the first element is 0.FDO/Extends or the string FDO_Extends_Profile, and the value is the PID identifying P1. P2 inherits all attribute definitions listed in P1, as well as all attribute definitions that are listed in profiles that are extended by P1.",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/ValidationMechanism": [
+    "Syntax"
+  ],
+  "0.FDO/DataType": [
+    "0.FDO/StringSyntax"
+  ],
+  "0.FDO/Cardinality": [
+    "0..*"
+  ]
+}

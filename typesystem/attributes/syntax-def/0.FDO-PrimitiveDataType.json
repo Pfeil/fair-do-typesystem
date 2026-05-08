@@ -1,0 +1,32 @@
+{
+  "0.FDO/Type": [
+    "FDO_Attribute_Definition"
+  ],
+  "0.FDO/Profile": [
+    "0.FDO/AttributeDef"
+  ],
+  "0.FDO/Data": [
+    "Not_Applicable"
+  ],
+  "0.FDO/Name": [
+    {
+      "value": "Primitive Data Type",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/Description": [
+    {
+      "value": "There are four possible values: string, number, integer, and boolean. All of these primitives MUST be supported by all clients.",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/ValidationMechanism": [
+    "Whitelist"
+  ],
+  "0.FDO/DataType": [
+    "syntax/custom/PrimitiveDataTypeSyntax.json"
+  ],
+  "0.FDO/Cardinality": [
+    "1"
+  ]
+}

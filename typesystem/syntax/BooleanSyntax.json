@@ -1,0 +1,33 @@
+{
+  "0.FDO/Type": [
+    "FDO_Syntax_Definition"
+  ],
+  "0.FDO/Profile": [
+    "0.FDO/SyntaxDef"
+  ],
+  "0.FDO/Data": [
+    "Not_Applicable"
+  ],
+  "0.FDO/Name": [
+    {
+      "value": "Boolean",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/Description": [
+    {
+      "value": "Boolean data type. Represents truth values: true or false.",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/PrimitiveDataType": [
+    "boolean"
+  ],
+  "0.FDO/Regex": [],
+  "0.FDO/NumericInterval": [],
+  "0.FDO/Whitelist": [
+    true,
+    false
+  ],
+  "0.FDO/Blacklist": []
+}

@@ -1,0 +1,32 @@
+{
+  "0.FDO/Type": [
+    "FDO_Syntax_Definition"
+  ],
+  "0.FDO/Profile": [
+    "0.FDO/SyntaxDef"
+  ],
+  "0.FDO/Data": [
+    "Not_Applicable"
+  ],
+  "0.FDO/Name": [
+    {
+      "value": "Cardinality Syntax",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/Description": [
+    {
+      "value": "Defines the valid format for cardinality expressions. Must match the regular expression: ^(\\d+)(\\.\\.(\\d+|\\*))?$. Examples: 1, 0..1, 1..*, 0..*, 2..3",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/PrimitiveDataType": [
+    "string"
+  ],
+  "0.FDO/Regex": [
+    "^(\\d+)(\\.\\.(\\d+|\\*))?$"
+  ],
+  "0.FDO/NumericInterval": [],
+  "0.FDO/Whitelist": [],
+  "0.FDO/Blacklist": []
+}

@@ -1,0 +1,30 @@
+{
+  "0.FDO/Type": [
+    "FDO_Syntax_Definition"
+  ],
+  "0.FDO/Profile": [
+    "0.FDO/SyntaxDef"
+  ],
+  "0.FDO/Data": [
+    "Not_Applicable"
+  ],
+  "0.FDO/Name": [
+    {
+      "value": "Number",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/Description": [
+    {
+      "value": "Floating-point number data type. Represents real numbers including decimals. Follows IEEE 754 double-precision format.",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/PrimitiveDataType": [
+    "number"
+  ],
+  "0.FDO/Regex": [],
+  "0.FDO/NumericInterval": [],
+  "0.FDO/Whitelist": [],
+  "0.FDO/Blacklist": []
+}

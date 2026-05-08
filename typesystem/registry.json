@@ -1,0 +1,37 @@
+{
+  "_meta": {
+    "description": "Local registry for FDO type system development. Maps logical PIDs to local file paths.",
+    "version": "0.1.0",
+    "note": "For development/testing only. Replace with actual PIDs when registering types."
+  },
+  "baseUri": "hdl:21.11111/",
+  "entries": {
+    "0.FDO/Root": "core/0.FDO-Root.json",
+    "0.FDO/ProfileDef": "core/0.FDO-ProfileDef.json",
+    "0.FDO/AttributeDef": "core/0.FDO-AttributeDef.json",
+    "0.FDO/SyntaxDef": "core/0.FDO-SyntaxDef.json",
+    "0.FDO/Type": "attributes/mandatory/0.FDO-Type.json",
+    "0.FDO/Profile": "attributes/mandatory/0.FDO-Profile.json",
+    "0.FDO/Data": "attributes/mandatory/0.FDO-Data.json",
+    "0.FDO/Name": "attributes/profile-def/0.FDO-Name.json",
+    "0.FDO/Description": "attributes/profile-def/0.FDO-Description.json",
+    "0.FDO/Attribute": "attributes/profile-def/0.FDO-Attribute.json",
+    "0.FDO/Extends": "attributes/profile-def/0.FDO-Extends.json",
+    "0.FDO/denyAdditionalAttributes": "attributes/profile-def/0.FDO-denyAdditionalAttributes.json",
+    "0.FDO/ValidationMechanism": "attributes/attribute-def/0.FDO-ValidationMechanism.json",
+    "0.FDO/DataType": "attributes/attribute-def/0.FDO-DataType.json",
+    "0.FDO/Cardinality": "attributes/attribute-def/0.FDO-Cardinality.json",
+    "0.FDO/PrimitiveDataType": "attributes/syntax-def/0.FDO-PrimitiveDataType.json",
+    "0.FDO/Regex": "attributes/syntax-def/0.FDO-Regex.json",
+    "0.FDO/NumericInterval": "attributes/syntax-def/0.FDO-NumericInterval.json",
+    "0.FDO/Whitelist": "attributes/syntax-def/0.FDO-Whitelist.json",
+    "0.FDO/Blacklist": "attributes/syntax-def/0.FDO-Blacklist.json",
+    "0.FDO/StringSyntax": "syntax/StringSyntax.json",
+    "0.FDO/NumberSyntax": "syntax/NumberSyntax.json",
+    "0.FDO/IntegerSyntax": "syntax/IntegerSyntax.json",
+    "0.FDO/BooleanSyntax": "syntax/BooleanSyntax.json",
+    "0.FDO/ValidationMechanismSyntax": "syntax/custom/ValidationMechanismSyntax.json",
+    "0.FDO/CardinalitySyntax": "syntax/custom/CardinalitySyntax.json",
+    "0.FDO/PrimitiveDataTypeSyntax": "syntax/custom/PrimitiveDataTypeSyntax.json"
+  }
+}
