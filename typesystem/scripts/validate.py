@@ -10,7 +10,10 @@ This script checks:
 4. Basic structural validity
 
 Usage:
-    python scripts/validate.py [path/to/file.json]
+    python scripts/validate.py [path/to/file.json] [--quiet]
+
+Options:
+    --quiet, -q    Only show warnings and errors (hide successful steps)
 
 If no file is specified, validates all files in the typesystem directory.
 """
@@ -32,11 +35,18 @@ class ValidationError(Exception):
 class FDOValidator:
     """Validates FDO type system files."""
 
-    def __init__(self, base_path: Path):
+    def __init__(self, base_path: Path, verbose: bool = True):
         self.base_path = base_path
+        self.verbose = verbose  # Set this FIRST before calling _load_registry
         self.registry = self._load_registry()
         self.errors: List[Tuple[str, str]] = []
         self.warnings: List[Tuple[str, str]] = []
+
+    def log(self, message: str, indent: int = 0):
+        """Print a log message if verbose mode is enabled."""
+        if self.verbose:
+            prefix = "  " * indent
+            print(f"{prefix}{message}")
 
     def _load_registry(self) -> Dict[str, str]:
         """Load the registry.json file."""
@@ -47,7 +57,9 @@ class FDOValidator:
 
         with open(registry_path) as f:
             data = json.load(f)
-            return data.get("entries", {})
+            result = data.get("entries", {})
+            self.log(f"Loaded registry with {len(result)} entries", 1)
+            return result
 
     def resolve_reference(self, ref: str) -> Optional[Path]:
         """Resolve a PID or path reference to a local file path."""
@@ -79,12 +91,18 @@ class FDOValidator:
         return fdo.get(attr_name, [])
 
     def check_required_attributes(
-        self, fdo: Dict, path: Path, required: List[str]
+        self, fdo: Dict, path: Path, required: List[str], indent: int = 1
     ) -> bool:
         """Check that all required attributes are present."""
+        self.log("Checking required attributes:", indent)
         valid = True
         for attr in required:
-            if attr not in fdo or not fdo[attr]:
+            present = attr in fdo and fdo[attr]
+            status = "✓" if present else "✗"
+            self.log(
+                f"  {status} {attr}: {'present' if present else 'MISSING'}", indent + 1
+            )
+            if not present:
                 self.errors.append((str(path), f"Missing required attribute: {attr}"))
                 valid = False
         return valid
@@ -255,9 +273,12 @@ class FDOValidator:
 
     def validate_profile(self, fdo: Dict, path: Path) -> bool:
         """Validate a profile FDO."""
+        self.log(f"\n📋 Validating PROFILE: {path.name}", 0)
+        self.log(f"Path: {path}", 1)
         valid = True
 
-        # Required attributes per 0.FDO/ProfileDef
+        # Step 1: Check required attributes per 0.FDO/ProfileDef
+        self.log("\nStep 1: Checking required attributes (per 0.FDO/ProfileDef):", 1)
         required = [
             "0.FDO/Type",
             "0.FDO/Profile",
@@ -265,18 +286,31 @@ class FDOValidator:
             "0.FDO/Name",
             "0.FDO/Attribute",
         ]
-        if not self.check_required_attributes(fdo, path, required):
+        if not self.check_required_attributes(fdo, path, required, indent=2):
             valid = False
 
-        # Check 0.FDO/Type contains FDO_Profile
+        # Step 2: Check 0.FDO/Type contains FDO_Profile
+        self.log("\nStep 2: Checking FDO type:", 1)
         types = fdo.get("0.FDO/Type", [])
-        if "FDO_Profile" not in types:
+        self.log(f"  Found types: {types}", 2)
+        if "FDO_Profile" in types:
+            self.log("  ✓ Contains 'FDO_Profile'", 2)
+        else:
+            self.log("  ✗ MISSING 'FDO_Profile'", 2)
             self.errors.append((str(path), "Profile must have type 'FDO_Profile'"))
             valid = False
 
-        # Check 0.FDO/Attribute has at least 3 entries (Type, Profile, Data are mandatory)
+        # Step 3: Check 0.FDO/Attribute count
+        self.log("\nStep 3: Checking attribute list:", 1)
         attrs = fdo.get("0.FDO/Attribute", [])
-        if len(attrs) < 3:
+        self.log(f"  Found {len(attrs)} attribute(s): {attrs}", 2)
+        if len(attrs) >= 3:
+            self.log(f"  ✓ Has at least 3 attributes (minimum required)", 2)
+        else:
+            self.log(
+                f"  ✗ Must define at least 3 attributes (Type, Profile, Data), got {len(attrs)}",
+                2,
+            )
             self.errors.append(
                 (
                     str(path),
@@ -285,13 +319,56 @@ class FDOValidator:
             )
             valid = False
 
-        # Check referenced attribute definitions exist
+        # Step 4: Check mandatory attributes are in the list
+        self.log("\nStep 4: Checking mandatory attributes are listed:", 1)
+        mandatory_in_list = ["0.FDO/Type", "0.FDO/Profile", "0.FDO/Data"]
+        for mandatory_attr in mandatory_in_list:
+            if mandatory_attr in attrs:
+                self.log(f"  ✓ {mandatory_attr} is in attribute list", 2)
+            else:
+                self.log(f"  ✗ {mandatory_attr} is MISSING from attribute list", 2)
+                self.errors.append(
+                    (
+                        str(path),
+                        f"Profile must include {mandatory_attr} in 0.FDO/Attribute list",
+                    )
+                )
+                valid = False
+
+        # Step 5: Check referenced attribute definitions exist
+        self.log("\nStep 5: Resolving attribute definition references:", 1)
         for attr_ref in attrs:
+            self.log(f"  Checking reference: {attr_ref}", 2)
             resolved = self.resolve_reference(attr_ref)
-            if resolved is None:
+            if resolved and resolved.exists():
+                self.log(
+                    f"    ✓ Resolved to: {resolved.relative_to(self.base_path)}", 3
+                )
+            else:
+                self.log(f"    ✗ Cannot resolve", 3)
                 self.warnings.append(
                     (str(path), f"Cannot resolve Attribute reference: {attr_ref}")
                 )
+
+        # Step 6: Check profile self-reference (special case for ProfileDef)
+        if path.name == "0.FDO-ProfileDef.json":
+            self.log(
+                "\nStep 6: Checking self-referential structure (ProfileDef special case):",
+                1,
+            )
+            profiles = fdo.get("0.FDO/Profile", [])
+            self.log(f"  Profile references: {profiles}", 2)
+            if "0.FDO/ProfileDef" in profiles:
+                self.log(
+                    f"  ✓ ProfileDef correctly references itself (bootstrapping)", 2
+                )
+            else:
+                self.log(f"  ⚠ ProfileDef should reference itself for bootstrapping", 2)
+
+        if valid:
+            self.log(f"\n✅ PROFILE VALID: {path.name}", 0)
+        else:
+            self.log(f"\n❌ PROFILE INVALID: {path.name}", 0)
 
         return valid
 
@@ -379,9 +456,23 @@ class FDOValidator:
 def main():
     base_path = Path(__file__).parent.parent
 
-    if len(sys.argv) > 1:
+    # Parse command line arguments
+    verbose = True
+    file_path_arg = None
+
+    for arg in sys.argv[1:]:
+        if arg in ["--quiet", "-q"]:
+            verbose = False
+        elif arg.startswith("-"):
+            print(f"Unknown option: {arg}")
+            print("Usage: python validate.py [file.json] [--quiet]")
+            sys.exit(1)
+        else:
+            file_path_arg = arg
+
+    if file_path_arg:
         # Validate specific file
-        file_path = Path(sys.argv[1])
+        file_path = Path(file_path_arg)
         if not file_path.is_absolute():
             # Try relative to current working directory first
             cwd_path = Path.cwd() / file_path
@@ -391,13 +482,14 @@ def main():
                 # Fall back to relative to base_path
                 file_path = base_path / file_path
 
-        validator = FDOValidator(base_path)
+        validator = FDOValidator(base_path, verbose=verbose)
         valid = validator.validate_fdo_record(file_path)
         validator.print_report()
         sys.exit(0 if valid else 1)
     else:
-        # Validate all files
-        validator = FDOValidator(base_path)
+        if verbose:
+            print("🔍 Validating all type system files...\n")
+        validator = FDOValidator(base_path, verbose=verbose)
         valid = validator.validate_all()
         validator.print_report()
         sys.exit(0 if valid else 1)

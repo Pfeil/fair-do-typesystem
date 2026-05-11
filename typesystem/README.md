@@ -144,12 +144,19 @@ When ready to register types with an official registry:
 cd typesystem/scripts
 uv sync
 
-# Validate all type system files
+# Validate all type system files (verbose mode - shows all steps)
 uv run fdo-validate
 uv run python validate.py
 
-# Validate a specific file
+# Validate in quiet mode (only warnings and errors)
+uv run fdo-validate --quiet
+uv run python validate.py --quiet
+
+# Validate a specific file (verbose)
 uv run python validate.py core/0.FDO-Root.json
+
+# Validate a specific file (quiet)
+uv run python validate.py core/0.FDO-Root.json --quiet
 
 # Run from parent directory
 cd ..
@@ -157,6 +164,47 @@ uv run --directory scripts fdo-validate
 
 # Run tests (when available)
 uv run pytest
+```
+
+### Command Line Options
+
+| Option | Short | Description |
+|--------|-------|-------------|
+| `--quiet` | `-q` | Only show warnings and errors, hide successful validation steps |
+| *(default)* | | Show detailed step-by-step validation process |
+
+### Understanding the Validation Output
+
+When running in verbose mode (default), the validator shows:
+
+1. **Registry Loading**: Number of PID-to-path mappings loaded
+2. **For each FDO file**:
+   - File name and path
+   - **Step 1**: Required attributes check (per the meta-profile)
+   - **Step 2**: FDO type verification
+   - **Step 3**: Attribute list validation
+   - **Step 4**: Mandatory attributes presence check
+   - **Step 5**: Attribute definition reference resolution
+   - **Step 6**: Special checks (e.g., ProfileDef self-reference)
+   - Final validity status
+3. **Summary**: Overall validation result with error/warning counts
+
+Example output for validating `0.FDO-ProfileDef.json`:
+```
+📋 Validating PROFILE: 0.FDO-ProfileDef.json
+  Path: /path/to/core/0.FDO-ProfileDef.json
+
+Step 1: Checking required attributes (per 0.FDO/ProfileDef):
+    Checking required attributes:
+        ✓ 0.FDO/Type: present
+        ✓ 0.FDO/Profile: present
+        ...
+
+Step 6: Checking self-referential structure (ProfileDef special case):
+      Profile references: ['0.FDO/ProfileDef']
+      ✓ ProfileDef correctly references itself (bootstrapping)
+
+✅ PROFILE VALID: 0.FDO-ProfileDef.json
 ```
 
 ### Using uv (Recommended)
