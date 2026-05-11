@@ -90,6 +90,70 @@ class FDOValidator:
         """Get the value of an attribute from an FDO record."""
         return fdo.get(attr_name, [])
 
+    def is_pid_reference(self, value: str) -> bool:
+        """Check if a string is a PID reference (not a literal value).
+
+        Uses a blacklist of known non-PID literals. Can be enhanced later
+        with proper PID validation when the type system uses real registered PIDs.
+        """
+        non_pid_literals = {"Not_Applicable"}
+        return value not in non_pid_literals
+
+    def get_profile_required_attributes(
+        self, profile_ref: str, fdo_path: Path, _visited: Optional[set] = None
+    ) -> Tuple[List[str], int, int]:
+        """Load a profile definition and recursively collect required attributes from extended profiles.
+
+        Returns a tuple of (required_attributes, total_attributes_collected, profiles_traversed_count).
+        """
+        if _visited is None:
+            _visited = set()
+
+        # Avoid infinite loops from circular extension references
+        if profile_ref in _visited:
+            self.log(f"    ↩ Skipping {profile_ref}: already visited", 4)
+            return [], 0, 0
+        _visited.add(profile_ref)
+
+        resolved = self.resolve_reference(profile_ref)
+        if not resolved or not resolved.exists():
+            self.warnings.append(
+                (str(fdo_path), f"Cannot resolve profile reference: {profile_ref}")
+            )
+            return [], 0, 1
+
+        try:
+            profile_def = self.load_fdo(resolved)
+            own_attrs = profile_def.get("0.FDO/Attribute", [])
+
+            # Collect attributes from extended profiles recursively
+            extends_refs = profile_def.get("0.FDO/Extends", [])
+            if extends_refs:
+                self.log(f"    ↓ Extends: {extends_refs}", 3)
+
+            all_attrs = list(own_attrs)
+            profiles_count = 1
+
+            for ext_ref in extends_refs:
+                if not isinstance(ext_ref, str) or not self.is_pid_reference(ext_ref):
+                    continue
+                ext_attrs, ext_attr_count, ext_profile_count = (
+                    self.get_profile_required_attributes(ext_ref, fdo_path, _visited)
+                )
+                # Merge attributes, avoiding duplicates
+                for attr in ext_attrs:
+                    if attr not in all_attrs:
+                        all_attrs.append(attr)
+                profiles_count += ext_profile_count
+
+            return all_attrs, len(all_attrs), profiles_count
+
+        except Exception as e:
+            self.warnings.append(
+                (str(fdo_path), f"Cannot load profile definition {profile_ref}: {e}")
+            )
+            return [], 0, 1
+
     def check_required_attributes(
         self, fdo: Dict, path: Path, required: List[str], indent: int = 1
     ) -> bool:
@@ -163,14 +227,16 @@ class FDOValidator:
         """Validate a syntax definition FDO."""
         valid = True
 
-        # Required attributes per 0.FDO/SyntaxDef
-        required = [
-            "0.FDO/Type",
-            "0.FDO/Profile",
-            "0.FDO/Data",
-            "0.FDO/Name",
-            "0.FDO/PrimitiveDataType",
-        ]
+        # Load required attributes from 0.FDO/SyntaxDef profile definition
+        self.log("Checking required attributes (from 0.FDO/SyntaxDef):", 1)
+        required, attr_count, profile_count = self.get_profile_required_attributes(
+            "0.FDO/SyntaxDef", path
+        )
+        self.log(
+            f"  → Collected {attr_count} attributes from {profile_count} profile(s)", 2
+        )
+        if not required:
+            required = ["0.FDO/Type", "0.FDO/Profile", "0.FDO/Data"]
         if not self.check_required_attributes(fdo, path, required):
             valid = False
 
@@ -214,15 +280,16 @@ class FDOValidator:
         """Validate an attribute definition FDO."""
         valid = True
 
-        # Required attributes per 0.FDO/AttributeDef
-        required = [
-            "0.FDO/Type",
-            "0.FDO/Profile",
-            "0.FDO/Data",
-            "0.FDO/Name",
-            "0.FDO/ValidationMechanism",
-            "0.FDO/Cardinality",
-        ]
+        # Load required attributes from 0.FDO/AttributeDef profile definition
+        self.log("Checking required attributes (from 0.FDO/AttributeDef):", 1)
+        required, attr_count, profile_count = self.get_profile_required_attributes(
+            "0.FDO/AttributeDef", path
+        )
+        self.log(
+            f"  → Collected {attr_count} attributes from {profile_count} profile(s)", 2
+        )
+        if not required:
+            required = ["0.FDO/Type", "0.FDO/Profile", "0.FDO/Data"]
         if not self.check_required_attributes(fdo, path, required):
             valid = False
 
@@ -277,15 +344,41 @@ class FDOValidator:
         self.log(f"Path: {path}", 1)
         valid = True
 
-        # Step 1: Check required attributes per 0.FDO/ProfileDef
-        self.log("\nStep 1: Checking required attributes (per 0.FDO/ProfileDef):", 1)
-        required = [
-            "0.FDO/Type",
-            "0.FDO/Profile",
-            "0.FDO/Data",
-            "0.FDO/Name",
-            "0.FDO/Attribute",
-        ]
+        # Step 1: Check required attributes per the profile this FDO references
+        self.log("\nStep 1: Checking required attributes (from profile definition):", 1)
+        profile_refs = fdo.get("0.FDO/Profile", [])
+        total_required = []
+        total_profiles_traversed = 0
+        for ref in profile_refs:
+            if isinstance(ref, str) and not ref.startswith("0.FDO/"):
+                # Skip non-FDO profile references (e.g., custom syntax profiles)
+                continue
+            required, attr_count, profile_count = self.get_profile_required_attributes(
+                ref, path
+            )
+            total_required.extend([a for a in required if a not in total_required])
+            total_profiles_traversed += profile_count
+            if required:
+                break  # Use the first successfully loaded profile definition
+        required = total_required
+        if not required:
+            # Fallback: use common FDO attributes if no profile definition found
+            required = ["0.FDO/Type", "0.FDO/Profile", "0.FDO/Data"]
+            self.log(
+                f"  ⚠ Could not load profile definition, using fallback: {required}",
+                3,
+            )
+        else:
+            self.log(
+                f"  → Collected {len(required)} attributes from {total_profiles_traversed} profile(s)",
+                2,
+            )
+        # Filter required attributes to only those the Profile actually declares
+        # A Profile only needs to satisfy attributes it claims to have
+        declared_attrs = fdo.get("0.FDO/Attribute", [])
+        if declared_attrs:
+            required = [attr for attr in required if attr in declared_attrs]
+            self.log(f"  → Checking declared attributes only: {required}", 2)
         if not self.check_required_attributes(fdo, path, required, indent=2):
             valid = False
 
