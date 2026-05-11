@@ -158,6 +158,10 @@ uv run python validate.py core/0.FDO-Root.json
 # Validate a specific file (quiet)
 uv run python validate.py core/0.FDO-Root.json --quiet
 
+# Validate multiple specific files
+uv run python validate.py core/0.FDO-Root.json core/0.FDO-ProfileDef.json
+uv run python validate.py core/*.json  # Shell glob expansion
+
 # Run from parent directory
 cd ..
 uv run --directory scripts fdo-validate
@@ -168,10 +172,26 @@ uv run pytest
 
 ### Command Line Options
 
-| Option | Short | Description |
-|--------|-------|-------------|
+| Argument | Short | Description |
+|----------|-------|-------------|
+| `[file.json ...]` | | One or more files to validate (default: all files) |
 | `--quiet` | `-q` | Only show warnings and errors, hide successful validation steps |
-| *(default)* | | Show detailed step-by-step validation process |
+| *(none)* | | Show detailed step-by-step validation process (default) |
+
+**Examples:**
+```bash
+# Single file
+python validate.py core/0.FDO-Root.json
+
+# Multiple files
+python validate.py core/0.FDO-Root.json core/0.FDO-ProfileDef.json
+
+# Using shell glob
+python validate.py core/*.json
+
+# With quiet flag
+python validate.py core/*.json --quiet
+```
 
 ### Understanding the Validation Output
 

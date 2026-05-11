@@ -458,41 +458,52 @@ def main():
 
     # Parse command line arguments
     verbose = True
-    file_path_arg = None
+    file_path_args = []
 
     for arg in sys.argv[1:]:
         if arg in ["--quiet", "-q"]:
             verbose = False
         elif arg.startswith("-"):
             print(f"Unknown option: {arg}")
-            print("Usage: python validate.py [file.json] [--quiet]")
+            print("Usage: python validate.py [file1.json] [file2.json] ... [--quiet]")
             sys.exit(1)
         else:
-            file_path_arg = arg
+            file_path_args.append(arg)
 
-    if file_path_arg:
-        # Validate specific file
-        file_path = Path(file_path_arg)
-        if not file_path.is_absolute():
-            # Try relative to current working directory first
-            cwd_path = Path.cwd() / file_path
-            if cwd_path.exists():
-                file_path = cwd_path
-            else:
-                # Fall back to relative to base_path
-                file_path = base_path / file_path
+    validator = FDOValidator(base_path, verbose=verbose)
+    all_valid = True
 
-        validator = FDOValidator(base_path, verbose=verbose)
-        valid = validator.validate_fdo_record(file_path)
-        validator.print_report()
-        sys.exit(0 if valid else 1)
+    if file_path_args:
+        # Validate specific files
+        for file_path_arg in file_path_args:
+            file_path = Path(file_path_arg)
+            if not file_path.is_absolute():
+                # Try relative to current working directory first
+                cwd_path = Path.cwd() / file_path
+                if cwd_path.exists():
+                    file_path = cwd_path
+                else:
+                    # Fall back to relative to base_path
+                    file_path = base_path / file_path
+
+            if not file_path.exists():
+                validator.errors.append(
+                    (str(file_path), f"File not found: {file_path}")
+                )
+                all_valid = False
+                continue
+
+            valid = validator.validate_fdo_record(file_path)
+            if not valid:
+                all_valid = False
     else:
+        # Validate all files
         if verbose:
             print("🔍 Validating all type system files...\n")
-        validator = FDOValidator(base_path, verbose=verbose)
-        valid = validator.validate_all()
-        validator.print_report()
-        sys.exit(0 if valid else 1)
+        all_valid = validator.validate_all()
+
+    validator.print_report()
+    sys.exit(0 if all_valid else 1)
 
 
 if __name__ == "__main__":
