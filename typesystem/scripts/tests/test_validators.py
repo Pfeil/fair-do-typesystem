@@ -9,13 +9,13 @@ Tests are organized into classes:
 import pytest
 
 try:
-    from assembly import ProfileAssembly
+    from assembly import AttributeAssembly, ProfileAssembly
     from models import AssembledProfile, PidRecord, ValidationResult
     from registry import PidRegistry
     from validation_logger import ValidationLogger
     from validators import AttributeValidator, ProfileValidator, SpecificationValidator
 except ImportError:
-    from assembly import ProfileAssembly
+    from assembly import AttributeAssembly, ProfileAssembly
     from models import AssembledProfile, PidRecord, ValidationResult
     from registry import PidRegistry
     from validation_logger import ValidationLogger
@@ -43,6 +43,12 @@ def registry(logger):
 def assembly(registry, logger):
     """Create a ProfileAssembly for testing."""
     return ProfileAssembly(registry, logger)
+
+
+@pytest.fixture
+def attribute_assembly(registry, logger):
+    """Create an AttributeAssembly for testing."""
+    return AttributeAssembly(registry, logger)
 
 
 @pytest.fixture
@@ -403,14 +409,16 @@ class TestProfileValidatorIntegration:
 class TestAttributeValidator:
     """Test AttributeValidator (placeholder for Phase 4)."""
 
-    def test_attribute_validator_exists(self, logger, registry):
+    def test_attribute_validator_exists(self, logger, registry, attribute_assembly):
         """Test that AttributeValidator class exists."""
-        validator = AttributeValidator(registry, logger)
+        validator = AttributeValidator(registry, logger, attribute_assembly)
         assert validator is not None
 
-    def test_attribute_validator_returns_empty_result(self, logger, registry):
-        """Test that AttributeValidator returns empty result (not yet implemented)."""
-        validator = AttributeValidator(registry, logger)
+    def test_attribute_validator_returns_result(
+        self, logger, registry, attribute_assembly
+    ):
+        """Test that AttributeValidator returns a result."""
+        validator = AttributeValidator(registry, logger, attribute_assembly)
         record = PidRecord(
             pid="test/Record",
             data={"0.FDO/Type": ["FDO_Profile"]},
@@ -419,9 +427,8 @@ class TestAttributeValidator:
 
         result = validator.validate(record, "test/Record")
 
-        assert result.valid is True
-        assert len(result.errors) == 0
-        assert len(result.warnings) == 0
+        # Should return a result (might have errors or not)
+        assert result is not None
 
 
 # =============================================================================

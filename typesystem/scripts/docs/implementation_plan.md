@@ -1085,19 +1085,19 @@ class ParallelProfileAssembly(ProfileAssembly):
 - [ ] Whitelist/blacklist validation
 - [ ] Integration with assembly
 
-### Phase 4: Specification Validation
+### Phase 6: Specification Validation
 - [ ] `SpecificationValidator`
 - [ ] Root profile conformance
 - [ ] Structural checks
 - [ ] Type consistency checks
 
-### Phase 5: Orchestration & CLI
+### Phase 7: Orchestration & CLI
 - [ ] `ValidationOrchestrator`
 - [ ] CLI argument parsing
 - [ ] File loading and PID conversion
 - [ ] Summary reporting
 
-### Phase 6: Testing & Refinement
+### Phase 8: Testing & Refinement
 - [ ] Test with existing type system files
 - [ ] Verify logging clarity
 - [ ] Performance profiling (even without caching)
