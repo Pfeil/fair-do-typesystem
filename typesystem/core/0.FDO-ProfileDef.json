@@ -26,8 +26,6 @@
     "0.FDO/Data",
     "0.FDO/Name",
     "0.FDO/Description",
-    "0.FDO/Attribute",
-    "0.FDO/Extends",
-    "0.FDO/denyAdditionalAttributes"
+    "0.FDO/Attribute"
   ]
 }

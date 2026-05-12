@@ -166,9 +166,77 @@ uv run python validate.py core/*.json  # Shell glob expansion
 cd ..
 uv run --directory scripts fdo-validate
 
-# Run tests (when available)
+## Testing
+
+The validator includes a comprehensive test suite organized by module:
+
+### Running Tests
+
+```bash
+cd typesystem/scripts
+
+# Run all tests
 uv run pytest
+
+# Run tests with verbose output
+uv run pytest -v
+
+# Run tests for specific module
+uv run pytest tests/test_models.py
+uv run pytest tests/test_validation_logger.py
+uv run pytest tests/test_registry.py
+
+# Run tests with coverage report
+uv run pytest --cov=. --cov-report=term-missing
+
+# Run tests matching a pattern
+uv run pytest -k "test_pid"  # Tests with "pid" in name
+uv run pytest -k "TestPidRecord"  # All tests in TestPidRecord class
 ```
+
+### Test Structure
+
+Tests are organized to match the code structure:
+
+```
+typesystem/scripts/
+├── models.py                    → tests/test_models.py
+├── validation_logger.py         → tests/test_validation_logger.py
+├── registry.py                  → tests/test_registry.py
+├── assembly.py                  → tests/test_assembly.py (Phase 2)
+├── validators.py                → tests/test_validators.py (Phase 3)
+└── tests/
+    ├── __init__.py
+    ├── test_models.py
+    ├── test_validation_logger.py
+    ├── test_registry.py
+    └── conftest.py              # Shared fixtures
+```
+
+### Writing Tests
+
+Each test file corresponds to one module and uses pytest:
+
+```python
+"""Tests for my_module.py."""
+
+import pytest
+from my_module import MyClass
+
+
+class TestMyClass:
+    """Test MyClass functionality."""
+
+    def test_something(self):
+        """Test description."""
+        obj = MyClass()
+        assert obj.method() == expected
+```
+
+### Continuous Integration
+
+Tests can be run automatically on commit or push using CI/CD pipelines.
+The test structure supports parallel execution and selective testing.
 
 ### Command Line Options
 
