@@ -8,7 +8,7 @@ This module handles the complex logic of recursive resolution, cycle detection,
 and merging. Validators use assembled data without worrying about how it was gathered.
 """
 
-from typing import List, Optional, Set
+from typing import Any, List, Optional, Set
 
 try:
     # When imported as a package
@@ -38,9 +38,9 @@ class ProfileAssembly:
         print(f"Total attributes: {len(assembled.all_attributes)}")
     """
 
-    def __init__(self, registry: PidRegistry, logger: ValidationLogger):
-        self.registry = registry
-        self.logger = logger
+    def __init__(self, registry: PidRegistry, logger: ValidationLogger) -> None:
+        self.registry: PidRegistry = registry
+        self.logger: ValidationLogger = logger
 
     def assemble(self, profile_pid: str) -> AssembledProfile:
         """
@@ -206,9 +206,9 @@ class AttributeAssembly:
         print(f"Type: {rules.primitive_type}")
     """
 
-    def __init__(self, registry: PidRegistry, logger: ValidationLogger):
-        self.registry = registry
-        self.logger = logger
+    def __init__(self, registry: PidRegistry, logger: ValidationLogger) -> None:
+        self.registry: PidRegistry = registry
+        self.logger: ValidationLogger = logger
 
     def assemble_rules(self, attr_name: str) -> ValidationRules:
         """
@@ -232,7 +232,7 @@ class AttributeAssembly:
         )
 
         # Resolve attribute definition
-        attr_def = self.registry.resolve_pid(attr_name)
+        attr_def: Optional[PidRecord] = self.registry.resolve_pid(attr_name)
         if not attr_def:
             self.logger.log_step(
                 "Attribute Assembly", f"✗ Failed to resolve {attr_name}", indent=2
@@ -246,8 +246,8 @@ class AttributeAssembly:
         )
 
         # Extract cardinality
-        cardinality_vals = attr_def.get_values("0.FDO/Cardinality")
-        cardinality = cardinality_vals[0] if cardinality_vals else None
+        cardinality_vals: List[Any] = attr_def.get_values("0.FDO/Cardinality")
+        cardinality: Optional[str] = cardinality_vals[0] if cardinality_vals else None
         if cardinality:
             self.logger.log_step(
                 "Cardinality",
@@ -256,10 +256,10 @@ class AttributeAssembly:
             )
 
         # Resolve syntax definition
-        syntax_refs = attr_def.get_values("0.FDO/DataType")
-        syntax_pid = syntax_refs[0] if syntax_refs else None
+        syntax_refs: List[Any] = attr_def.get_values("0.FDO/DataType")
+        syntax_pid: Optional[str] = syntax_refs[0] if syntax_refs else None
 
-        rules = ValidationRules(
+        rules: ValidationRules = ValidationRules(
             cardinality=cardinality,
             syntax_definition_pid=syntax_pid,
         )
@@ -271,7 +271,7 @@ class AttributeAssembly:
                 f"↓ Resolving syntax: {syntax_pid}",
                 indent=2,
             )
-            syntax_def = self.registry.resolve_pid(syntax_pid)
+            syntax_def: Optional[PidRecord] = self.registry.resolve_pid(syntax_pid)
             if syntax_def:
                 self._extract_syntax_rules(syntax_def, rules)
             else:
@@ -289,7 +289,9 @@ class AttributeAssembly:
 
         return rules
 
-    def _extract_syntax_rules(self, syntax_def: PidRecord, rules: ValidationRules):
+    def _extract_syntax_rules(
+        self, syntax_def: PidRecord, rules: ValidationRules
+    ) -> None:
         """
         Extract validation rules from a syntax definition.
 
@@ -301,7 +303,7 @@ class AttributeAssembly:
             rules: The ValidationRules object to populate
         """
         # Extract primitive data type
-        type_vals = syntax_def.get_values("0.FDO/PrimitiveDataType")
+        type_vals: List[Any] = syntax_def.get_values("0.FDO/PrimitiveDataType")
         rules.primitive_type = self._extract_single_value(type_vals)
         if rules.primitive_type:
             self.logger.log_step(
@@ -311,7 +313,7 @@ class AttributeAssembly:
             )
 
         # Extract regex pattern
-        regex_vals = syntax_def.get_values("0.FDO/Regex")
+        regex_vals: List[Any] = syntax_def.get_values("0.FDO/Regex")
         rules.regex = self._extract_single_value(regex_vals)
         if rules.regex:
             self.logger.log_step(
@@ -321,7 +323,7 @@ class AttributeAssembly:
             )
 
         # Extract numeric interval
-        interval_vals = syntax_def.get_values("0.FDO/NumericInterval")
+        interval_vals: List[Any] = syntax_def.get_values("0.FDO/NumericInterval")
         if interval_vals:
             rules.numeric_interval = self._extract_single_value(interval_vals)
             self.logger.log_step(
@@ -331,7 +333,7 @@ class AttributeAssembly:
             )
 
         # Extract whitelist
-        whitelist_vals = syntax_def.get_values("0.FDO/Whitelist")
+        whitelist_vals: List[Any] = syntax_def.get_values("0.FDO/Whitelist")
         if whitelist_vals:
             rules.whitelist = whitelist_vals
             self.logger.log_step(
@@ -341,7 +343,7 @@ class AttributeAssembly:
             )
 
         # Extract blacklist
-        blacklist_vals = syntax_def.get_values("0.FDO/Blacklist")
+        blacklist_vals: List[Any] = syntax_def.get_values("0.FDO/Blacklist")
         if blacklist_vals:
             rules.blacklist = blacklist_vals
             self.logger.log_step(
@@ -350,7 +352,7 @@ class AttributeAssembly:
                 indent=3,
             )
 
-    def _extract_single_value(self, values: list) -> any:
+    def _extract_single_value(self, values: List[Any]) -> Optional[Any]:
         """
         Get first value if exactly one exists.
 

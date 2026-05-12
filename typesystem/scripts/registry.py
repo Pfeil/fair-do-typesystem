@@ -6,7 +6,7 @@ Validators work with pure PIDs and records, never with file paths.
 
 import json
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 try:
     # When imported as a package
@@ -35,21 +35,20 @@ class PidRegistry:
             print(f"Resolved: {record.pid}")
     """
 
-    def __init__(self, logger: ValidationLogger):
-        self.logger = logger
-        self.base_path = Path(__file__).parent.parent
-        self.registry = self._load_registry()
+    def __init__(self, logger: ValidationLogger) -> None:
+        self.logger: ValidationLogger = logger
+        self.base_path: Path = Path(__file__).parent.parent
+        self.registry: Dict[str, str] = self._load_registry()
 
     def _load_registry(self) -> Dict[str, str]:
         """Load the registry.json file that maps PIDs to file paths."""
-        registry_path = self.base_path / "registry.json"
+        registry_path: Path = self.base_path / "registry.json"
         if not registry_path.exists():
             raise FileNotFoundError(f"registry.json not found at {registry_path}")
 
         with open(registry_path) as f:
-            data = json.load(f)
-            result = data.get("entries", {})
-            return result
+            data: Dict[str, object] = json.load(f)
+            return data.get("entries", {})
 
     def resolve_pid(self, pid: str) -> Optional[PidRecord]:
         """
@@ -71,19 +70,19 @@ class PidRegistry:
         """
         # Strategy 1: Check registry.json
         if pid in self.registry:
-            file_path = self.base_path / self.registry[pid]
+            file_path: Path = self.base_path / self.registry[pid]
             if file_path.exists():
                 return self._load_record_from_file(pid, file_path)
 
         # Strategy 2: Try as relative path
-        direct_path = self.base_path / pid
+        direct_path: Path = self.base_path / pid
         if direct_path.exists():
             return self._load_record_from_file(pid, direct_path)
 
         # Strategy 3: Try common variations
         for suffix in [".json", ""]:
             for prefix in ["", "core/", "attributes/", "syntax/"]:
-                test_path = self.base_path / f"{prefix}{pid}{suffix}"
+                test_path: Path = self.base_path / f"{prefix}{pid}{suffix}"
                 if test_path.exists():
                     return self._load_record_from_file(pid, test_path)
 
@@ -91,13 +90,14 @@ class PidRegistry:
         self.logger.log_resolution(pid, success=False)
         return None
 
-    def _load_record_from_file(self, pid: str, file_path: Path) -> PidRecord:
+    def _load_record_from_file(self, pid: str, file_path: Path) -> Optional[PidRecord]:
         """Load a JSON file and wrap it as a PidRecord."""
         try:
             with open(file_path) as f:
-                data = json.load(f)
+                data: Dict[str, Any] = json.load(f)
 
             # Use the file path relative to base_path for logging
+            target: str
             try:
                 target = str(file_path.relative_to(self.base_path))
             except ValueError:

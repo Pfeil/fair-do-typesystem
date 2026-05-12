@@ -82,16 +82,16 @@ class ValidationResult:
     attributes_checked: int = 0
     resolutions_performed: int = 0
 
-    def add_error(self, message: str):
+    def add_error(self, message: str) -> None:
         """Add an error and mark result as invalid."""
         self.errors.append(message)
         self.valid = False
 
-    def add_warning(self, message: str):
+    def add_warning(self, message: str) -> None:
         """Add a warning (doesn't affect validity)."""
         self.warnings.append(message)
 
-    def merge(self, other: "ValidationResult"):
+    def merge(self, other: "ValidationResult") -> None:
         """Merge another validation result into this one."""
         if not other.valid:
             self.valid = False

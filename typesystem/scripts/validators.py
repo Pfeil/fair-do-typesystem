@@ -8,7 +8,7 @@ to assembly components (ProfileAssembly, AttributeAssembly).
 """
 
 import re
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 try:
     # When imported as a package
@@ -46,10 +46,10 @@ class ProfileValidator:
         registry: PidRegistry,
         logger: ValidationLogger,
         assembly: ProfileAssembly,
-    ):
-        self.registry = registry
-        self.logger = logger
-        self.assembly = assembly
+    ) -> None:
+        self.registry: PidRegistry = registry
+        self.logger: ValidationLogger = logger
+        self.assembly: ProfileAssembly = assembly
 
     def validate(self, record: PidRecord, record_pid: str) -> ValidationResult:
         """
@@ -67,9 +67,9 @@ class ProfileValidator:
         Returns:
             ValidationResult with errors/warnings
         """
-        result = ValidationResult()
+        result: ValidationResult = ValidationResult()
 
-        profile_refs = record.get_values("0.FDO/Profile")
+        profile_refs: List[Any] = record.get_values("0.FDO/Profile")
         if not profile_refs:
             self.logger.log_step(
                 "Profile Validation",
@@ -101,7 +101,7 @@ class ProfileValidator:
             )
 
             # ASSEMBLY: Get complete profile info
-            assembled = self.assembly.assemble(profile_ref)
+            assembled: AssembledProfile = self.assembly.assemble(profile_ref)
             result.profiles_checked += 1
 
             if assembled.has_cycle:
@@ -115,7 +115,7 @@ class ProfileValidator:
                 )
 
             # VALIDATION: Check required attributes
-            required_attrs = self._get_required_attributes(assembled)
+            required_attrs: List[str] = self._get_required_attributes(assembled)
             self.logger.log_step(
                 "Required Attributes",
                 f"Checking {len(required_attrs)} required attribute(s)",
@@ -124,7 +124,7 @@ class ProfileValidator:
 
             for attr_name in required_attrs:
                 if not record.has_attribute(attr_name):
-                    error_msg = (
+                    error_msg: str = (
                         f"Missing required attribute '{attr_name}' "
                         f"(declared by {profile_ref})"
                     )
@@ -154,9 +154,10 @@ class ProfileValidator:
         """
         # Filter to only declared attributes (not inherited)
         # This is what the profile itself requires
-        return assembled.declared_attributes
+        result: List[str] = assembled.declared_attributes
+        return result
 
-    def _is_pid_reference(self, value: str) -> bool:
+    def _is_pid_reference(self, value: Any) -> bool:
         """
         Check if a string is a PID reference (not a literal value).
 
@@ -168,12 +169,16 @@ class ProfileValidator:
         Returns:
             True if value looks like a PID reference
         """
-        non_pid_literals = {
+        if not isinstance(value, str):
+            return False
+
+        non_pid_literals: Set[str] = {
             "Not_Applicable",
             "Not_Applicable_Numeric",
             "Not_Applicable_String",
         }
-        return value not in non_pid_literals
+        result: bool = value not in non_pid_literals
+        return result
 
 
 class AttributeValidator:
@@ -206,10 +211,10 @@ class AttributeValidator:
         registry: PidRegistry,
         logger: ValidationLogger,
         assembly: AttributeAssembly,
-    ):
-        self.registry = registry
-        self.logger = logger
-        self.assembly = assembly
+    ) -> None:
+        self.registry: PidRegistry = registry
+        self.logger: ValidationLogger = logger
+        self.assembly: AttributeAssembly = assembly
 
     def validate(self, record: PidRecord, record_pid: str) -> ValidationResult:
         """
@@ -227,7 +232,7 @@ class AttributeValidator:
         Returns:
             ValidationResult with errors/warnings
         """
-        result = ValidationResult()
+        result: ValidationResult = ValidationResult()
 
         self.logger.log_step(
             "Attribute Validation",
@@ -236,7 +241,7 @@ class AttributeValidator:
         )
 
         # Get all attributes from the record (excluding metadata)
-        metadata_attrs = {"0.FDO/Type", "0.FDO/Profile", "0.FDO/Data"}
+        metadata_attrs: Set[str] = {"0.FDO/Type", "0.FDO/Profile", "0.FDO/Data"}
 
         for attr_name, values in record.data.items():
             # Skip if it's a metadata attribute or empty
@@ -250,7 +255,7 @@ class AttributeValidator:
             )
 
             # ASSEMBLY: Get validation rules for this attribute
-            rules = self.assembly.assemble_rules(attr_name)
+            rules: ValidationRules = self.assembly.assemble_rules(attr_name)
             result.resolutions_performed += 1
 
             # VALIDATION: Check cardinality
@@ -264,8 +269,10 @@ class AttributeValidator:
                     )
 
             # VALIDATION: Check each value against syntax rules
-            for i, value in enumerate(values):
-                value_result = self._validate_value(value, rules, attr_name)
+            for value in values:
+                value_result: ValidationResult = self._validate_value(
+                    value, rules, attr_name
+                )
                 result.merge(value_result)
 
             result.attributes_checked += 1
@@ -301,12 +308,12 @@ class AttributeValidator:
         try:
             # Parse cardinality expression
             if ".." in cardinality_str:
-                parts = cardinality_str.split("..")
-                min_count = int(parts[0])
-                max_count = None if parts[1] == "*" else int(parts[1])
+                parts: List[str] = cardinality_str.split("..")
+                min_count: int = int(parts[0])
+                max_count: Optional[int] = None if parts[1] == "*" else int(parts[1])
             else:
                 min_count = int(cardinality_str)
-                max_count = min_count
+                max_count: int = min_count
 
             # Check constraints
             if actual_count < min_count:
@@ -340,7 +347,7 @@ class AttributeValidator:
             )
             return True
 
-        except (ValueError, IndexError) as e:
+        except (ValueError, IndexError):
             self.logger.log_step(
                 "Cardinality",
                 f"⚠ {attr_name}: invalid cardinality expression '{cardinality_str}'",
@@ -370,13 +377,15 @@ class AttributeValidator:
         Returns:
             ValidationResult with any errors found
         """
-        result = ValidationResult()
-        value_str = str(value)[:50]  # Truncate for logging
+        result: ValidationResult = ValidationResult()
+        value_str: str = str(value)[:50]  # Truncate for logging
 
         # Type check
         if rules.primitive_type:
             if not self._check_type(value, rules.primitive_type):
-                error_msg = f"{attr_name}: {value_str} is not {rules.primitive_type}"
+                error_msg: str = (
+                    f"{attr_name}: {value_str} is not {rules.primitive_type}"
+                )
                 self.logger.log_step("Type Check", f"✗ {error_msg}", indent=3)
                 result.add_error(error_msg)
             else:
@@ -479,7 +488,7 @@ class AttributeValidator:
             # Invalid regex, be permissive
             return True
 
-    def _check_numeric_interval(self, value: float, interval: dict) -> bool:
+    def _check_numeric_interval(self, value: float, interval: Dict[str, Any]) -> bool:
         """
         Check if a numeric value is within an interval.
 
@@ -490,8 +499,8 @@ class AttributeValidator:
         Returns:
             True if value is within interval
         """
-        min_val = interval.get("min")
-        max_val = interval.get("max")
+        min_val: Optional[Any] = interval.get("min")
+        max_val: Optional[Any] = interval.get("max")
 
         if min_val is not None and value < min_val:
             return False
@@ -517,9 +526,9 @@ class SpecificationValidator:
         self,
         registry: PidRegistry,
         logger: ValidationLogger,
-    ):
-        self.registry = registry
-        self.logger = logger
+    ) -> None:
+        self.registry: PidRegistry = registry
+        self.logger: ValidationLogger = logger
 
     def validate(self, record: PidRecord, record_pid: str) -> ValidationResult:
         """
