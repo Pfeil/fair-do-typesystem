@@ -240,12 +240,8 @@ class AttributeValidator:
             indent=0,
         )
 
-        # Get all attributes from the record (excluding metadata)
-        metadata_attrs: Set[str] = {"0.FDO/Type", "0.FDO/Profile", "0.FDO/Data"}
-
         for attr_name, values in record.data.items():
-            # Skip if it's a metadata attribute or empty
-            if attr_name in metadata_attrs or not values:
+            if not values:
                 continue
 
             self.logger.log_step(
