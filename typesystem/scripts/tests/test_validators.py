@@ -402,59 +402,136 @@ class TestProfileValidatorIntegration:
 
 
 # =============================================================================
-# TestAttributeValidator - Placeholder tests for Phase 4
+# TestAttributeValidator - Validation functionality tests
 # =============================================================================
 
 
 class TestAttributeValidator:
-    """Test AttributeValidator (placeholder for Phase 4)."""
+    """Test AttributeValidator validation functionality."""
 
-    def test_attribute_validator_exists(self, logger, registry, attribute_assembly):
-        """Test that AttributeValidator class exists."""
-        validator = AttributeValidator(registry, logger, attribute_assembly)
-        assert validator is not None
-
-    def test_attribute_validator_returns_result(
+    def test_attribute_validator_instantiation(
         self, logger, registry, attribute_assembly
     ):
-        """Test that AttributeValidator returns a result."""
-        validator = AttributeValidator(registry, logger, attribute_assembly)
-        record = PidRecord(
-            pid="test/Record",
-            data={"0.FDO/Type": ["FDO_Profile"]},
-            source_pid="test/Record",
+        """Test that AttributeValidator can be instantiated."""
+        validator: AttributeValidator = AttributeValidator(
+            registry, logger, attribute_assembly
+        )
+        assert validator is not None
+        assert validator.registry is registry
+        assert validator.logger is logger
+        assert validator.assembly is attribute_assembly
+
+    def test_validate_empty_record(self, logger, registry, attribute_assembly):
+        """Test validation of empty record."""
+        validator: AttributeValidator = AttributeValidator(
+            registry, logger, attribute_assembly
+        )
+        record: PidRecord = PidRecord(
+            pid="test/Empty",
+            data={},
+            source_pid="test/Empty",
         )
 
-        result = validator.validate(record, "test/Record")
+        result: ValidationResult = validator.validate(record, "test/Empty")
 
-        # Should return a result (might have errors or not)
         assert result is not None
+        assert result.valid is True
+        assert len(result.errors) == 0
+        assert result.attributes_checked == 0
+
+    def test_validate_metadata_only_record(self, logger, registry, attribute_assembly):
+        """Test validation of minimal record."""
+        pid: str = "test/minimal"
+        validator: AttributeValidator = AttributeValidator(
+            registry, logger, attribute_assembly
+        )
+        record: PidRecord = PidRecord(
+            pid=pid,
+            data={
+                "0.FDO/Type": ["FDO_Profile"],
+                "0.FDO/Profile": ["0.FDO/Root"],
+                "0.FDO/Data": ["Not_Applicable"],
+            },
+            source_pid=pid,
+        )
+
+        result: ValidationResult = validator.validate(record, pid)
+
+        assert result.valid is True
+
+    def test_validate_with_missing_attribute(
+        self, logger, registry, attribute_assembly
+    ):
+        """Test profile violations do not matter, as we only validate contained attributes."""
+        validator: AttributeValidator = AttributeValidator(
+            registry, logger, attribute_assembly
+        )
+
+        # Create a record with missing required attribute
+        # 0.FDO/Name has cardinality "1..*" but we provide none
+        record: PidRecord = PidRecord(
+            pid="test/MissingName",
+            data={
+                "0.FDO/Type": ["FDO_Profile"],
+                "0.FDO/Profile": ["0.FDO/ProfileDef"],
+                "0.FDO/Data": ["Not_Applicable"],
+                # Missing 0.FDO/Name which requires 1..*
+            },
+            source_pid="test/MissingName",
+        )
+
+        result: ValidationResult = validator.validate(record, "test/MissingName")
+
+        # Since 0.FDO/Name is not present at all, no cardinality check happens
+        # The validator only checks attributes that exist in the record
+        assert result is not None
+        assert result.errors == []
+        assert result.profiles_checked == 0
+        assert result.warnings == []
 
 
 # =============================================================================
-# TestSpecificationValidator - Placeholder tests for Phase 6
+# TestSpecificationValidator - Specification validation (TODO)
 # =============================================================================
 
 
 class TestSpecificationValidator:
-    """Test SpecificationValidator (placeholder for Phase 6)."""
+    """Test SpecificationValidator structure."""
 
-    def test_specification_validator_exists(self, logger, registry):
-        """Test that SpecificationValidator class exists."""
-        validator = SpecificationValidator(registry, logger)
+    def test_specification_validator_instantiation(self, logger, registry):
+        """Test that SpecificationValidator can be instantiated."""
+        validator: SpecificationValidator = SpecificationValidator(registry, logger)
         assert validator is not None
+        assert validator.registry is registry
+        assert validator.logger is logger
 
-    def test_specification_validator_returns_empty_result(self, logger, registry):
-        """Test that SpecificationValidator returns empty result (not yet implemented)."""
-        validator = SpecificationValidator(registry, logger)
-        record = PidRecord(
+    def test_specification_validator_current_behavior(self, logger, registry):
+        """Test current behavior (returns valid result)."""
+        validator: SpecificationValidator = SpecificationValidator(registry, logger)
+        record: PidRecord = PidRecord(
             pid="test/Record",
             data={"0.FDO/Type": ["FDO_Profile"]},
             source_pid="test/Record",
         )
 
-        result = validator.validate(record, "test/Record")
+        result: ValidationResult = validator.validate(record, "test/Record")
 
+        # Currently returns empty valid result (not yet implemented)
+        assert result is not None
         assert result.valid is True
         assert len(result.errors) == 0
         assert len(result.warnings) == 0
+
+    def test_specification_validator_tracks_resolutions(self, logger, registry):
+        """Test that validator tracks resolution count."""
+        validator: SpecificationValidator = SpecificationValidator(registry, logger)
+        record: PidRecord = PidRecord(
+            pid="test/Record",
+            data={"0.FDO/Type": ["FDO_Profile"]},
+            source_pid="test/Record",
+        )
+
+        result: ValidationResult = validator.validate(record, "test/Record")
+
+        # Should track resolutions even if not implemented
+        assert hasattr(result, "resolutions_performed")
