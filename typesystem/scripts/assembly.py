@@ -12,11 +12,13 @@ from typing import Any, List, Optional, Set
 
 try:
     # When imported as a package
+    from .helpers import MutBool
     from .models import AssembledProfile, PidRecord, ValidationRules
     from .registry import PidRegistry
     from .validation_logger import ValidationLogger
 except ImportError:
     # When run directly
+    from helpers import MutBool
     from models import AssembledProfile, PidRecord, ValidationRules
     from registry import PidRegistry
     from validation_logger import ValidationLogger
@@ -59,7 +61,7 @@ class ProfileAssembly:
         visited: Set[str] = set()
         all_attrs: List[str] = []
         extends_chain: List[str] = []
-        has_cycle = False
+        has_cycle = MutBool(False)
 
         self.logger.log_step(
             "Profile Assembly", f"Starting assembly for {profile_pid}", indent=0
@@ -78,7 +80,7 @@ class ProfileAssembly:
             declared_attributes=declared_attrs,
             extends_chain=extends_chain,
             profiles_resolved=len(visited),
-            has_cycle=has_cycle,
+            has_cycle=has_cycle.value,
         )
 
         self.logger.log_step(
@@ -96,7 +98,7 @@ class ProfileAssembly:
         visited: Set[str],
         all_attrs: List[str],
         extends_chain: List[str],
-        has_cycle: bool,
+        has_cycle: MutBool,
     ):
         """
         Recursively resolve profile extension chain.
@@ -115,7 +117,7 @@ class ProfileAssembly:
             self.logger.log_step(
                 "Cycle Detection", f"↩ {pid} already visited (cycle detected)", indent=1
             )
-            has_cycle = True
+            has_cycle.value = True
             return
 
         visited.add(pid)
