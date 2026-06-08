@@ -12,7 +12,7 @@ class TestProfileAssembly:
     """Test ProfileAssembly functionality."""
 
     @pytest.fixture
-    def assembly(self):
+    def assembly(self) -> ProfileAssembly:
         """Create a ProfileAssembly instance for testing."""
         logger = ValidationLogger(verbose=True)
         registry = PidRegistry(logger)
