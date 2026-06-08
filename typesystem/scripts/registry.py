@@ -81,7 +81,7 @@ class PidRegistry:
 
         # Strategy 3: Try common variations
         for suffix in [".json", ""]:
-            for prefix in ["", "core/", "attributes/", "syntax/"]:
+            for prefix in ["", "core/", "attributes/", "syntax/", "examples/"]:
                 test_path: Path = self.base_path / f"{prefix}{pid}{suffix}"
                 if test_path.exists():
                     return self._load_record_from_file(pid, test_path)

@@ -14,31 +14,53 @@ class TestProfileAssembly:
     @pytest.fixture
     def assembly(self):
         """Create a ProfileAssembly instance for testing."""
-        logger = ValidationLogger(verbose=False)
+        logger = ValidationLogger(verbose=True)
         registry = PidRegistry(logger)
         return ProfileAssembly(registry, logger)
 
-    def test_assemble_simple_profile(self, assembly):
-        """Test assembling a profile with no extensions."""
+    def test_assemble_root(self, assembly: ProfileAssembly):
+        """Test assembling the simple root profile."""
         result = assembly.assemble("0.FDO/Root")
 
         assert result.pid == "0.FDO/Root"
         assert result.profiles_resolved == 1
-        assert len(result.all_attributes) >= 3  # Root has Type, Profile, Data
+        assert len(result.all_attributes) == 3  # Root specifies Type, Profile, Data
         assert len(result.extends_chain) == 1
         assert not result.has_cycle
 
-    def test_assemble_profile_with_extensions(self, assembly):
-        """Test assembling a profile that extends another profile."""
-        # ProfileDef should be a good test case
+    def test_assemble_profiledef(self, assembly: ProfileAssembly):
+        """Test assembling the profile definition."""
         result = assembly.assemble("0.FDO/ProfileDef")
 
+        assert len(result.extends_chain) == 1
         assert result.pid == "0.FDO/ProfileDef"
-        assert result.profiles_resolved >= 1
-        assert len(result.all_attributes) > 0
+        assert result.profiles_resolved == 1
+        assert len(result.all_attributes) == 6
         assert "0.FDO/Type" in result.all_attributes
         assert "0.FDO/Profile" in result.all_attributes
         assert "0.FDO/Data" in result.all_attributes
+
+    def test_assemble_extended_profile(self, assembly: ProfileAssembly):
+        result = assembly.assemble("extending-profile")
+
+        assert len(result.extends_chain) == 2
+        assert result.pid == "extending-profile"
+        assert result.profiles_resolved == 2
+        assert len(result.all_attributes) == 7
+        assert "0.FDO/Type" in result.all_attributes
+        assert "0.FDO/Profile" in result.all_attributes
+        assert "0.FDO/Data" in result.all_attributes
+        assert "added_attribute" in result.all_attributes
+        assert not result.has_cycle
+
+    def test_assemble_recursing_profile(self, assembly: ProfileAssembly):
+        result = assembly.assemble("recursing-profile")
+
+        assert len(result.extends_chain) == 1
+        assert result.pid == "recursing-profile"
+        assert result.profiles_resolved == 1
+        assert len(result.all_attributes) == 1
+        assert result.has_cycle
 
     def test_assemble_collects_all_attributes(self, assembly):
         """Test that all attributes from extension chain are collected."""

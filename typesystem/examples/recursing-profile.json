@@ -1,0 +1,19 @@
+{
+  "0.FDO/Type": ["FDO_Profile"],
+  "0.FDO/Profile": ["0.FDO/ProfileDef"],
+  "0.FDO/Data": ["Not_Applicable"],
+  "0.FDO/Name": [
+    {
+      "value": "Test Profile",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/Description": [
+    {
+      "value": "A Profile with extension.",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/Attribute": ["added_attribute"],
+  "0.FDO/Extends": ["recursing-profile"]
+}
