@@ -73,15 +73,16 @@ class TestProfileAssembly:
         for attr in result.all_attributes:
             assert isinstance(attr, str)
 
-    def test_assemble_avoids_duplicate_attributes(self, assembly):
+    def test_assemble_avoids_duplicate_attributes(self, assembly: ProfileAssembly):
         """Test that duplicate attributes are not added multiple times."""
-        result = assembly.assemble("0.FDO/SyntaxDef")
+        result = assembly.assemble("profile-with-duplicates")
 
         # Check for uniqueness
         unique_attrs = set(result.all_attributes)
         assert len(unique_attrs) == len(result.all_attributes), (
             "Duplicate attributes found in assembled profile"
         )
+        assert len(result.all_attributes) == 1
 
     def test_assemble_tracks_extends_chain(self, assembly):
         """Test that extension chain is properly tracked."""

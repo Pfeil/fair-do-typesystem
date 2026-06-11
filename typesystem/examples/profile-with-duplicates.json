@@ -1,0 +1,24 @@
+{
+  "0.FDO/Type": ["FDO_Profile"],
+  "0.FDO/Profile": ["0.FDO/ProfileDef"],
+  "0.FDO/Data": ["Not_Applicable"],
+  "0.FDO/Name": [
+    {
+      "value": "Profile with Duplicate Attributes",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/Description": [
+    {
+      "value": "This is for tests that check duplications do not matter, and therefore do not change anything.",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/Attribute": [
+    "0.FDO/Name",
+    "0.FDO/Name",
+    "0.FDO/Name",
+    "0.FDO/Name",
+    "0.FDO/Name"
+  ]
+}
