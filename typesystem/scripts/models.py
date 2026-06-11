@@ -61,7 +61,9 @@ class AssembledProfile:
     extends_chain: List[str] = field(
         default_factory=list, doc="The list of profiles resolved, in resolving order."
     )
-    profiles_resolved: int = field(default=0, doc="The number of profiles resolved.")
+    amount_resolved_extension_pids: int = field(
+        default=0, doc="The number of profiles resolved."
+    )
     has_cycle: bool = field(
         default=False, doc="Indicates if cycles occurred in the profile chain."
     )

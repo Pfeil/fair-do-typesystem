@@ -23,7 +23,7 @@ class TestProfileAssembly:
         result = assembly.assemble("0.FDO/Root")
 
         assert result.pid == "0.FDO/Root"
-        assert result.profiles_resolved == 1
+        assert result.amount_resolved_extension_pids == 1
         assert len(result.all_attributes) == 3  # Root specifies Type, Profile, Data
         assert len(result.extends_chain) == 1
         assert not result.has_cycle
@@ -34,7 +34,7 @@ class TestProfileAssembly:
 
         assert len(result.extends_chain) == 1
         assert result.pid == "0.FDO/ProfileDef"
-        assert result.profiles_resolved == 1
+        assert result.amount_resolved_extension_pids == 1
         assert len(result.all_attributes) == 6
         assert "0.FDO/Type" in result.all_attributes
         assert "0.FDO/Profile" in result.all_attributes
@@ -45,7 +45,7 @@ class TestProfileAssembly:
 
         assert len(result.extends_chain) == 2
         assert result.pid == "extending-profile"
-        assert result.profiles_resolved == 2
+        assert result.amount_resolved_extension_pids == 2
         assert len(result.all_attributes) == 7
         assert "0.FDO/Type" in result.all_attributes
         assert "0.FDO/Profile" in result.all_attributes
@@ -60,8 +60,8 @@ class TestProfileAssembly:
         assert result.pid in result.extends_chain, (
             f"PID {result.pid} should be in extends chain"
         )
-        assert result.profiles_resolved == 4, (
-            f"Expected three extends declarations from self and one from an extension, got {result.profiles_resolved}"
+        assert result.amount_resolved_extension_pids == 4, (
+            f"Expected 3+1 extensions, got {result.amount_resolved_extension_pids}"
         )
         assert len(result.all_attributes) == 8, (
             f"Expected 8 attributes: one from itself, and 1+6 from the extensions. Got {len(result.all_attributes)}"
@@ -111,8 +111,8 @@ class TestProfileAssembly:
         """Test that profile count is accurate."""
         result = assembly.assemble("0.FDO/Root")
 
-        assert result.profiles_resolved >= 1
-        assert result.profiles_resolved == len(result.extends_chain)
+        assert result.amount_resolved_extension_pids >= 1
+        assert result.amount_resolved_extension_pids == len(result.extends_chain)
 
     def test_assemble_handles_non_pid_extends(self, assembly: ProfileAssembly):
         """Test that non-PID extends values (like Not_Applicable) are filtered."""
@@ -121,7 +121,7 @@ class TestProfileAssembly:
 
         # Should not try to resolve "Not_Applicable" as a PID
         # Should complete successfully without errors
-        assert result.profiles_resolved >= 1
+        assert result.amount_resolved_extension_pids >= 1
 
     def test_assemble_logs_steps_in_verbose_mode(self, capsys):
         """Test that assembly logs steps when verbose."""
@@ -176,7 +176,7 @@ class TestAssembledProfileDataclass:
             all_attributes=["0.FDO/Type", "0.FDO/Profile", "0.FDO/Data", "0.FDO/Name"],
             declared_attributes=["0.FDO/Type", "0.FDO/Profile"],
             extends_chain=["0.FDO/TestProfile", "0.FDO/ParentProfile"],
-            profiles_resolved=2,
+            amount_resolved_extension_pids=2,
             has_cycle=False,
         )
 
@@ -184,7 +184,7 @@ class TestAssembledProfileDataclass:
         assert len(profile.all_attributes) == 4
         assert len(profile.declared_attributes) == 2
         assert len(profile.extends_chain) == 2
-        assert profile.profiles_resolved == 2
+        assert profile.amount_resolved_extension_pids == 2
         assert not profile.has_cycle
 
     def test_cycle_detection_result(self):
@@ -194,12 +194,12 @@ class TestAssembledProfileDataclass:
             all_attributes=["0.FDO/Type"],
             declared_attributes=["0.FDO/Type"],
             extends_chain=["0.FDO/Circular"],
-            profiles_resolved=1,
+            amount_resolved_extension_pids=1,
             has_cycle=True,
         )
 
         assert profile.has_cycle is True
-        assert profile.profiles_resolved == 1
+        assert profile.amount_resolved_extension_pids == 1
 
 
 class TestProfileAssemblyIntegration:
@@ -230,11 +230,11 @@ class TestProfileAssemblyIntegration:
 
             # Basic sanity checks
             assert result.pid == profile_pid
-            assert result.profiles_resolved >= 1
+            assert result.amount_resolved_extension_pids >= 1
             assert len(result.all_attributes) > 0
             assert len(result.extends_chain) > 0
 
-    def test_assemble_preserves_attribute_order(self, assembly):
+    def test_assemble_preserves_attribute_order(self, assembly: ProfileAssembly):
         """Test that attribute order is preserved (first occurrence wins)."""
         result = assembly.assemble("0.FDO/ProfileDef")
 
@@ -244,7 +244,7 @@ class TestProfileAssemblyIntegration:
             assert attr not in seen, f"Duplicate {attr} breaks order"
             seen.add(attr)
 
-    def test_multiple_assemblies_same_profile(self, assembly):
+    def test_multiple_assemblies_same_profile(self, assembly: ProfileAssembly):
         """Test that multiple assemblies of same profile work correctly."""
         result1 = assembly.assemble("0.FDO/Root")
         result2 = assembly.assemble("0.FDO/Root")
@@ -252,9 +252,12 @@ class TestProfileAssemblyIntegration:
         # Results should be equivalent (no caching, so different objects)
         assert result1.pid == result2.pid
         assert result1.all_attributes == result2.all_attributes
-        assert result1.profiles_resolved == result2.profiles_resolved
+        assert (
+            result1.amount_resolved_extension_pids
+            == result2.amount_resolved_extension_pids
+        )
 
-    def test_assemble_different_profiles_independent(self, assembly):
+    def test_assemble_different_profiles_independent(self, assembly: ProfileAssembly):
         """Test that assembling different profiles doesn't interfere."""
         result1 = assembly.assemble("0.FDO/Root")
         result2 = assembly.assemble("0.FDO/ProfileDef")
@@ -263,5 +266,5 @@ class TestProfileAssemblyIntegration:
         assert result1.pid != result2.pid
 
         # Both should be valid
-        assert result1.profiles_resolved >= 1
-        assert result2.profiles_resolved >= 1
+        assert result1.amount_resolved_extension_pids >= 1
+        assert result2.amount_resolved_extension_pids >= 1

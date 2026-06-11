@@ -92,7 +92,7 @@ class TestAssembledProfile:
         assert profile.all_attributes == []
         assert profile.declared_attributes == []
         assert profile.extends_chain == []
-        assert profile.profiles_resolved == 0
+        assert profile.amount_resolved_extension_pids == 0
         assert profile.has_cycle is False
 
     def test_with_attributes(self):
@@ -102,13 +102,13 @@ class TestAssembledProfile:
             all_attributes=["0.FDO/Type", "0.FDO/Profile", "0.FDO/Data", "0.FDO/Name"],
             declared_attributes=["0.FDO/Type", "0.FDO/Profile"],
             extends_chain=["0.FDO/ChildProfile", "0.FDO/ParentProfile"],
-            profiles_resolved=2,
+            amount_resolved_extension_pids=2,
             has_cycle=False,
         )
 
         assert len(profile.all_attributes) == 4
         assert len(profile.declared_attributes) == 2
-        assert profile.profiles_resolved == 2
+        assert profile.amount_resolved_extension_pids == 2
         assert len(profile.extends_chain) == 2
 
     def test_cycle_detected(self):
@@ -118,7 +118,7 @@ class TestAssembledProfile:
             all_attributes=["0.FDO/Type"],
             declared_attributes=["0.FDO/Type"],
             extends_chain=["0.FDO/CircularProfile"],
-            profiles_resolved=1,
+            amount_resolved_extension_pids=1,
             has_cycle=True,
         )
 

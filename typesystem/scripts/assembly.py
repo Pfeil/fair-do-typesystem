@@ -87,14 +87,14 @@ class ProfileAssembly:
             all_attributes=all_attrs,
             declared_attributes=root_attributes,
             extends_chain=extends_chain,
-            profiles_resolved=len(visited),
+            amount_resolved_extension_pids=len(visited),
             processing_warnings=processing_warnings,
             has_cycle=has_cycle.value,
         )
 
         self.logger.log_step(
             "Profile Assembly",
-            f"✓ Complete: {result.profiles_resolved} profile(s), "
+            f"✓ Complete: Resolved {result.amount_resolved_extension_pids} extension PID(s), "
             f"{len(result.all_attributes)} attribute(s)",
             indent=0,
         )
