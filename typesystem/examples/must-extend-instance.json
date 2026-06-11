@@ -1,0 +1,18 @@
+{
+  "0.FDO/Type": ["FDO_Profile"],
+  "0.FDO/Profile": ["must-extend-profile", "0.FDO/Root"],
+  "0.FDO/Data": ["Not_Applicable"],
+  "0.FDO/Name": [
+    {
+      "value": "Extending SyntaxDef Instance",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/Description": [
+    {
+      "value": "An instance of a profile that must extend something.",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/Extends": ["0.FDO/Root"]
+}

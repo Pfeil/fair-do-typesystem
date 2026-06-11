@@ -42,11 +42,11 @@ class UnresolvablePid:
 
 
 @dataclass
-class AssembledProfile:
-    """Complete profile information assembled from profile and all extensions.
+class ExtensionsInfo:
+    """Complete profile-like information assembled from profile and all extensions.
 
-    Result of ProfileAssembly.assemble() - contains all attributes from the
-    entire extension chain, with metadata about the resolution process.
+    Contains all values of 0.FDO/Attributes from the entire extension tree,
+    with metadata about the resolution process.
     """
 
     # The PID of this profile.
@@ -61,8 +61,22 @@ class AssembledProfile:
     amount_resolved_extension_pids: int = 0
     # Indicates if cycles occurred in the profile chain.
     has_cycle: bool = False
-    # Warnings during the cretion of this class will be appended to this array.
+    # Warnings that occurred during the collection of information in this class.
     processing_warnings: List[UnresolvablePid] = field(default_factory=list)
+
+
+@dataclass
+class ProfilesInfo:
+    """
+    Represents the result of a record's direct profiles.
+    """
+
+    # The record the profiles belong to.
+    record: PidRecord
+    # Assembled profiles for this record. Can be used for validation.
+    profiles: List[ExtensionsInfo] = field(default_factory=list)
+    # Warnings that occurred during the collection of information in this class.
+    process_warnings: List[UnresolvablePid] = field(default_factory=list)
 
 
 @dataclass

@@ -2,22 +2,23 @@
 
 import pytest
 
-from assembly import ProfileAssembly
+from assembly import ExtensionsAssembly, ProfilesAssembly
+from models import ExtensionsInfo, ProfilesInfo
 from registry import PidRegistry
 from validation_logger import ValidationLogger
 
 
-class TestProfileAssembly:
-    """Test ProfileAssembly functionality."""
+class TestExtensionsAssembly:
+    """Test ExtensionsAssembly functionality."""
 
     @pytest.fixture
-    def assembly(self) -> ProfileAssembly:
-        """Create a ProfileAssembly instance for testing."""
+    def assembly(self) -> ExtensionsAssembly:
+        """Create a ExtensionAssembly instance for testing."""
         logger = ValidationLogger(verbose=True)
         registry = PidRegistry(logger)
-        return ProfileAssembly(registry, logger)
+        return ExtensionsAssembly(registry, logger)
 
-    def test_assemble_root(self, assembly: ProfileAssembly):
+    def test_assemble_root(self, assembly: ExtensionsAssembly):
         """Test assembling the simple root profile."""
         result = assembly.assemble("0.FDO/Root")
 
@@ -27,7 +28,7 @@ class TestProfileAssembly:
         assert len(result.extends_chain) == 1
         assert not result.has_cycle
 
-    def test_assemble_profiledef(self, assembly: ProfileAssembly):
+    def test_assemble_profiledef(self, assembly: ExtensionsAssembly):
         """Test assembling the profile definition."""
         result = assembly.assemble("0.FDO/ProfileDef")
 
@@ -39,7 +40,7 @@ class TestProfileAssembly:
         assert "0.FDO/Profile" in result.all_attributes
         assert "0.FDO/Data" in result.all_attributes
 
-    def test_assemble_extended_profile(self, assembly: ProfileAssembly):
+    def test_assemble_extended_profile(self, assembly: ExtensionsAssembly):
         result = assembly.assemble("extending-profile")
 
         assert len(result.extends_chain) == 2
@@ -52,7 +53,7 @@ class TestProfileAssembly:
         assert "added_attribute" in result.all_attributes
         assert not result.has_cycle
 
-    def test_assemble_recursing_profile(self, assembly: ProfileAssembly):
+    def test_assemble_recursing_profile(self, assembly: ExtensionsAssembly):
         test_subject = "recursing-profile"
         result = assembly.assemble(test_subject)
 
@@ -70,7 +71,7 @@ class TestProfileAssembly:
             f"{test_subject} has one unresolvable reference, got {len(result.processing_warnings)}"
         )
 
-    def test_assemble_collects_all_attributes(self, assembly: ProfileAssembly):
+    def test_assemble_collects_all_attributes(self, assembly: ExtensionsAssembly):
         """Test that all attributes from extension chain are collected."""
         result = assembly.assemble("0.FDO/AttributeDef")
 
@@ -83,7 +84,7 @@ class TestProfileAssembly:
                 f"Expected attribute to be a string (PID), got {type(attr)}"
             )
 
-    def test_assemble_avoids_duplicate_attributes(self, assembly: ProfileAssembly):
+    def test_assemble_avoids_duplicate_attributes(self, assembly: ExtensionsAssembly):
         """Test that duplicate attributes are not added multiple times."""
         result = assembly.assemble("profile-with-duplicates")
 
@@ -94,7 +95,7 @@ class TestProfileAssembly:
         )
         assert len(result.all_attributes) == 1
 
-    def test_assemble_tracks_extends_chain(self, assembly: ProfileAssembly):
+    def test_assemble_tracks_extends_chain(self, assembly: ExtensionsAssembly):
         """Test that extension chain is properly tracked."""
         test_subject: str = "recursing-profile"
         result = assembly.assemble(test_subject)
@@ -106,7 +107,7 @@ class TestProfileAssembly:
         # From the "extending-profile"
         assert result.extends_chain[3] == "0.FDO/ProfileDef"
 
-    def test_assemble_counts_profiles_resolved(self, assembly: ProfileAssembly):
+    def test_assemble_counts_profiles_resolved(self, assembly: ExtensionsAssembly):
         """Test that profile count is accurate."""
         result = assembly.assemble("recursing-profile")
 
@@ -117,7 +118,7 @@ class TestProfileAssembly:
         """Test that assembly logs steps when verbose."""
         logger = ValidationLogger(verbose=True)
         registry = PidRegistry(logger)
-        assembly = ProfileAssembly(registry, logger)
+        assembly = ExtensionsAssembly(registry, logger)
 
         assembly.assemble("0.FDO/Root")
 
@@ -125,7 +126,7 @@ class TestProfileAssembly:
         # Should have logged something about profile assembly
         assert "Profile" in captured.out or "assembly" in captured.out.lower()
 
-    def test_is_pid_reference_filters_literals(self, assembly: ProfileAssembly):
+    def test_is_pid_reference_filters_literals(self, assembly: ExtensionsAssembly):
         """Test that literal values are not treated as PIDs."""
         assert assembly._is_pid_reference("0.FDO/Type") is True
         assert assembly._is_pid_reference("0.FDO/Profile") is True
@@ -134,28 +135,28 @@ class TestProfileAssembly:
         assert assembly._is_pid_reference("Not_Applicable_Numeric") is False
         assert assembly._is_pid_reference("Not_Applicable_String") is False
 
-    def test_is_pid_reference_accepts_valid_pids(self, assembly: ProfileAssembly):
+    def test_is_pid_reference_accepts_valid_pids(self, assembly: ExtensionsAssembly):
         """Test that valid PID-like strings are accepted."""
         # Any string that's not in the blacklist should be treated as PID reference
         assert assembly._is_pid_reference("Custom/PID") is True
         assert assembly._is_pid_reference("My/Attribute") is True
 
 
-class TestProfileAssemblyIntegration:
-    """Integration tests for ProfileAssembly with real profiles."""
+class TestExtensionsAssemblyIntegration:
+    """Integration tests for ExtensionsAssembly with real profiles."""
 
     @pytest.fixture
     def assembly(self):
-        """Create a ProfileAssembly instance for testing."""
+        """Create a ExtensionAssembly instance for testing."""
         logger = ValidationLogger(verbose=False)
         registry = PidRegistry(logger)
-        return ProfileAssembly(registry, logger)
+        return ExtensionsAssembly(registry, logger)
 
     def test_assemble_all_core_profiles(self):
         """Test assembling all core profiles successfully."""
         logger = ValidationLogger(verbose=False)
         registry = PidRegistry(logger)
-        assembly = ProfileAssembly(registry, logger)
+        assembly = ExtensionsAssembly(registry, logger)
 
         core_profiles = [
             "0.FDO/Root",
@@ -173,7 +174,7 @@ class TestProfileAssemblyIntegration:
             assert len(result.all_attributes) > 0
             assert len(result.extends_chain) > 0
 
-    def test_assemble_preserves_attribute_order(self, assembly: ProfileAssembly):
+    def test_assemble_preserves_attribute_order(self, assembly: ExtensionsAssembly):
         """Test that attribute order is preserved (first occurrence wins)."""
         result = assembly.assemble("0.FDO/ProfileDef")
 
@@ -183,7 +184,7 @@ class TestProfileAssemblyIntegration:
             assert attr not in seen, f"Duplicate {attr} breaks order"
             seen.add(attr)
 
-    def test_multiple_assemblies_same_profile(self, assembly: ProfileAssembly):
+    def test_multiple_assemblies_same_profile(self, assembly: ExtensionsAssembly):
         """Test that multiple assemblies of same profile work correctly."""
         result1 = assembly.assemble("0.FDO/Root")
         result2 = assembly.assemble("0.FDO/Root")
@@ -196,7 +197,9 @@ class TestProfileAssemblyIntegration:
             == result2.amount_resolved_extension_pids
         )
 
-    def test_assemble_different_profiles_independent(self, assembly: ProfileAssembly):
+    def test_assemble_different_profiles_independent(
+        self, assembly: ExtensionsAssembly
+    ):
         """Test that assembling different profiles doesn't interfere."""
         result1 = assembly.assemble("0.FDO/Root")
         result2 = assembly.assemble("0.FDO/ProfileDef")
@@ -207,3 +210,58 @@ class TestProfileAssemblyIntegration:
         # Both should be valid
         assert result1.amount_resolved_extension_pids >= 1
         assert result2.amount_resolved_extension_pids >= 1
+
+
+class TestProfilesAssembly:
+    """Test ExtensionAssembly functionality."""
+
+    @pytest.fixture
+    def profiles_assembly(self) -> ProfilesAssembly:
+        """Create a ExtensionAssembly instance for testing."""
+        logger = ValidationLogger(verbose=True)
+        registry = PidRegistry(logger)
+        return ProfilesAssembly(registry, logger)
+
+    @pytest.fixture
+    def extensions_assembly(self) -> ExtensionsAssembly:
+        """Create a ExtensionAssembly instance for testing."""
+        logger = ValidationLogger(verbose=True)
+        registry = PidRegistry(logger)
+        return ExtensionsAssembly(registry, logger)
+
+    def test_get_root_profiles(
+        self,
+        profiles_assembly: ProfilesAssembly,
+        extensions_assembly: ExtensionsAssembly,
+    ):
+        """Test assembling the simple root profile."""
+        profiles_info: ProfilesInfo | None = profiles_assembly.assemble("0.FDO/Root")
+        assert profiles_info
+        profile: ExtensionsInfo = extensions_assembly.assemble("0.FDO/ProfileDef")
+
+        assert len(profiles_info.profiles) == 1
+        calculated_profile = profiles_info.profiles[0]
+
+        assert calculated_profile == profile
+
+    def test_record_with_two_profiles(
+        self,
+        profiles_assembly: ProfilesAssembly,
+        extensions_assembly: ExtensionsAssembly,
+    ):
+        """Test assembling the simple root profile."""
+        profiles_info: ProfilesInfo | None = profiles_assembly.assemble(
+            "must-extend-instance"
+        )
+        assert profiles_info
+        profile_extend: ExtensionsInfo = extensions_assembly.assemble(
+            "must-extend-profile"
+        )
+        profile_root: ExtensionsInfo = extensions_assembly.assemble("0.FDO/Root")
+
+        assert len(profiles_info.profiles) == 2
+        calculated_profile_extend = profiles_info.profiles[0]
+        calculated_profile_root = profiles_info.profiles[1]
+
+        assert profile_root == calculated_profile_root
+        assert profile_extend == calculated_profile_extend

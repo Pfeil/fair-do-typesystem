@@ -12,13 +12,13 @@ Tests are organized into classes:
 import pytest
 
 try:
-    from assembly import AttributeAssembly, ProfileAssembly
+    from assembly import AttributeAssembly, ExtensionsAssembly
     from models import PidRecord, ValidationResult, ValidationRules
     from registry import PidRegistry
     from validation_logger import ValidationLogger
     from validators import AttributeValidator
 except ImportError:
-    from assembly import AttributeAssembly, ProfileAssembly
+    from assembly import AttributeAssembly, ExtensionsAssembly
     from models import PidRecord, ValidationResult, ValidationRules
     from registry import PidRegistry
     from validation_logger import ValidationLogger

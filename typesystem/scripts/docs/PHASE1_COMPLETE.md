@@ -8,7 +8,7 @@
 ### 1. `models.py` (~100 lines)
 Data classes with no business logic:
 - ✅ `PidRecord` - Represents resolved PID records, hides file system
-- ✅ `AssembledProfile` - Complete profile info from extension chains
+- ✅ `ExtensionsInfo` - Collected information from all extending PIDs of a record
 - ✅ `ValidationRules` - Assembled validation rules for attributes
 - ✅ `ValidationResult` - Aggregates validation errors/warnings/metadata
 

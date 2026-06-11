@@ -10,43 +10,57 @@ and merging. Validators use assembled data without worrying about how it was gat
 
 from typing import Any, List, Optional, Set
 
-from models import UnresolvablePid
+from models import ProfilesInfo, UnresolvablePid
 
 try:
     # When imported as a package
     from .helpers import MutBool
-    from .models import AssembledProfile, PidRecord, ValidationRules
+    from .models import ExtensionsInfo, PidRecord, ValidationRules
     from .registry import PidRegistry
     from .validation_logger import ValidationLogger
 except ImportError:
     # When run directly
     from helpers import MutBool
-    from models import AssembledProfile, PidRecord, ValidationRules
+    from models import ExtensionsInfo, PidRecord, ValidationRules
     from registry import PidRegistry
     from validation_logger import ValidationLogger
 
 
-class ProfileAssembly:
+class ProfilesAssembly:
+    def __init__(self, registry: PidRegistry, logger: ValidationLogger) -> None:
+        self.registry: PidRegistry = registry
+        self.logger: ValidationLogger = logger
+
+    def assemble(self, pid: str) -> ProfilesInfo | None:
+        record = self.registry.resolve_pid(pid)
+        if not record:
+            return None
+        warnings: List[UnresolvablePid] = []
+        profile_pids = record.get_values("0.FDO/Profile")
+        for profile_pid in profile_pids:
+            if not isinstance(profile_pid, str):
+                warnings.append(UnresolvablePid(profile_pid))
+        profile_pids = list(filter(lambda p: isinstance(p, str), profile_pids))
+        assembly = ExtensionsAssembly(self.registry, self.logger)
+        return ProfilesInfo(
+            process_warnings=warnings,
+            record=record,
+            profiles=[assembly.assemble(profile_pid) for profile_pid in profile_pids],
+        )
+
+
+class ExtensionsAssembly:
     """Assembles complete profile information from profile and all extensions.
 
     Given a profile PID, resolves the entire extension chain and collects
     all attributes from parent profiles. Handles cycles gracefully.
-
-    Usage:
-        logger = ValidationLogger(verbose=True)
-        registry = PidRegistry(logger)
-        assembly = ProfileAssembly(registry, logger)
-
-        assembled = assembly.assemble("0.FDO/ChildProfile")
-        print(f"Resolved {assembled.profiles_resolved} profiles")
-        print(f"Total attributes: {len(assembled.all_attributes)}")
     """
 
     def __init__(self, registry: PidRegistry, logger: ValidationLogger) -> None:
         self.registry: PidRegistry = registry
         self.logger: ValidationLogger = logger
 
-    def assemble(self, profile_pid: str) -> AssembledProfile:
+    def assemble(self, profile_pid: str) -> ExtensionsInfo:
         """
         Assemble complete profile information by resolving extension chain.
 
@@ -58,7 +72,7 @@ class ProfileAssembly:
             profile_pid: The PID of the profile to assemble
 
         Returns:
-            AssembledProfile with all attributes from the extension chain
+            ExtensionsInfo with all attributes from the extension chain
         """
         visited: Set[str] = set()
         root_attributes: List[str] = []
@@ -82,7 +96,7 @@ class ProfileAssembly:
             has_cycle,
         )
 
-        result = AssembledProfile(
+        result = ExtensionsInfo(
             pid=profile_pid,
             all_attributes=all_attrs,
             declared_attributes=root_attributes,

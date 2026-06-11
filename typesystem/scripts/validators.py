@@ -4,7 +4,7 @@ This module contains validators that check if records conform to their profiles
 and if attribute values match their definitions.
 
 Validators focus purely on validation logic - they delegate data gathering
-to assembly components (ProfileAssembly, AttributeAssembly).
+to assembly components.
 """
 
 import re
@@ -12,14 +12,14 @@ from typing import Any, Dict, List, Optional, Set
 
 try:
     # When imported as a package
-    from .assembly import AttributeAssembly, ProfileAssembly
-    from .models import AssembledProfile, PidRecord, ValidationResult, ValidationRules
+    from .assembly import AttributeAssembly, ExtensionsAssembly
+    from .models import ExtensionsInfo, PidRecord, ValidationResult, ValidationRules
     from .registry import PidRegistry
     from .validation_logger import ValidationLogger
 except ImportError:
     # When run directly
-    from assembly import AttributeAssembly, ProfileAssembly
-    from models import AssembledProfile, PidRecord, ValidationResult, ValidationRules
+    from assembly import AttributeAssembly, ExtensionsAssembly
+    from models import ExtensionsInfo, PidRecord, ValidationResult, ValidationRules
     from registry import PidRegistry
     from validation_logger import ValidationLogger
 
@@ -27,29 +27,19 @@ except ImportError:
 class ProfileValidator:
     """Validates that a record conforms to its claimed profile(s).
 
-    Uses ProfileAssembly to resolve complete profile requirements,
+    Uses ExtensionsAssembly to resolve complete profile requirements,
     then checks if the record has all required attributes.
-
-    Usage:
-        logger = ValidationLogger(verbose=True)
-        registry = PidRegistry(logger)
-        assembly = ProfileAssembly(registry, logger)
-        validator = ProfileValidator(registry, logger, assembly)
-
-        record = registry.resolve_pid("0.FDO/Root")
-        result = validator.validate(record, "0.FDO/Root")
-        print(f"Valid: {result.valid}")
     """
 
     def __init__(
         self,
         registry: PidRegistry,
         logger: ValidationLogger,
-        assembly: ProfileAssembly,
+        assembly: ExtensionsAssembly,
     ) -> None:
         self.registry: PidRegistry = registry
         self.logger: ValidationLogger = logger
-        self.assembly: ProfileAssembly = assembly
+        self.assembly: ExtensionsAssembly = assembly
 
     def validate(self, record: PidRecord, record_pid: str) -> ValidationResult:
         """
@@ -101,7 +91,7 @@ class ProfileValidator:
             )
 
             # ASSEMBLY: Get complete profile info
-            assembled: AssembledProfile = self.assembly.assemble(profile_ref)
+            assembled: ExtensionsInfo = self.assembly.assemble(profile_ref)
             result.profiles_checked += 1
 
             if assembled.has_cycle:
@@ -139,7 +129,7 @@ class ProfileValidator:
 
         return result
 
-    def _get_required_attributes(self, assembled: AssembledProfile) -> List[str]:
+    def _get_required_attributes(self, assembled: ExtensionsInfo) -> List[str]:
         """
         Get the list of required attributes from an assembled profile.
 

@@ -1,10 +1,9 @@
 """Tests for models.py data classes."""
 
-import pytest
-
 from models import (
-    AssembledProfile,
+    ExtensionsInfo,
     PidRecord,
+    ProfilesInfo,
     UnresolvablePid,
     ValidationResult,
     ValidationRules,
@@ -87,12 +86,12 @@ class TestPidRecord:
         assert record.get_single_value("0.FDO/Type") is None
 
 
-class TestAssembledProfile:
-    """Test AssembledProfile data class."""
+class TestExtensionsInfo:
+    """Test ExtensionsInfo data class."""
 
     def test_default_values(self):
         """Test that default values are set correctly."""
-        profile = AssembledProfile(pid="0.FDO/Test")
+        profile = ExtensionsInfo(pid="0.FDO/Test")
 
         assert profile.pid == "0.FDO/Test"
         assert profile.all_attributes == []
@@ -103,7 +102,7 @@ class TestAssembledProfile:
 
     def test_with_attributes(self):
         """Test profile with attributes from extension chain."""
-        profile = AssembledProfile(
+        profile = ExtensionsInfo(
             pid="0.FDO/ChildProfile",
             all_attributes=["0.FDO/Type", "0.FDO/Profile", "0.FDO/Data", "0.FDO/Name"],
             declared_attributes=["0.FDO/Type", "0.FDO/Profile"],
@@ -121,7 +120,7 @@ class TestAssembledProfile:
 
     def test_cycle_detected(self):
         """Test profile with detected cycle."""
-        profile = AssembledProfile(
+        profile = ExtensionsInfo(
             pid="0.FDO/CircularProfile",
             all_attributes=["0.FDO/Type"],
             declared_attributes=["0.FDO/Type"],

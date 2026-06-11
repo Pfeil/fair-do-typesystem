@@ -5,7 +5,7 @@ and attribute definitions. The validator is content-driven, deriving validation
 rules from the profiles and attribute definitions that records reference.
 
 Main components:
-- models: Data classes (PidRecord, AssembledProfile, ValidationRules, etc.)
+- models: Data classes (PidRecord, ValidationRules, etc.)
 - logging: Structured validation logger
 - registry: PID resolution with file system abstraction
 - assembly: Profile and attribute assembly (gathering validation rules)
@@ -14,7 +14,7 @@ Main components:
 """
 
 from .models import (
-    AssembledProfile,
+    ExtensionsInfo,
     PidRecord,
     ValidationResult,
     ValidationRules,
@@ -24,7 +24,7 @@ from .validation_logger import ValidationLogger
 
 __all__ = [
     "PidRecord",
-    "AssembledProfile",
+    "ExtensionsInfo",
     "ValidationRules",
     "ValidationResult",
     "ValidationLogger",

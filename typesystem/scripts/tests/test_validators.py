@@ -9,14 +9,14 @@ Tests are organized into classes:
 import pytest
 
 try:
-    from assembly import AttributeAssembly, ProfileAssembly
-    from models import AssembledProfile, PidRecord, ValidationResult
+    from assembly import AttributeAssembly, ExtensionsAssembly
+    from models import ExtensionsInfo, PidRecord, ValidationResult
     from registry import PidRegistry
     from validation_logger import ValidationLogger
     from validators import AttributeValidator, ProfileValidator, SpecificationValidator
 except ImportError:
-    from assembly import AttributeAssembly, ProfileAssembly
-    from models import AssembledProfile, PidRecord, ValidationResult
+    from assembly import AttributeAssembly, ExtensionsAssembly
+    from models import ExtensionsInfo, PidRecord, ValidationResult
     from registry import PidRegistry
     from validation_logger import ValidationLogger
     from validators import AttributeValidator, ProfileValidator, SpecificationValidator
@@ -29,37 +29,32 @@ except ImportError:
 
 @pytest.fixture
 def logger():
-    """Create a ValidationLogger for testing."""
     return ValidationLogger(verbose=False)
 
 
 @pytest.fixture
 def registry(logger):
-    """Create a PidRegistry for testing."""
     return PidRegistry(logger)
 
 
 @pytest.fixture
 def assembly(registry, logger):
-    """Create a ProfileAssembly for testing."""
-    return ProfileAssembly(registry, logger)
+    return ExtensionsAssembly(registry, logger)
 
 
 @pytest.fixture
 def attribute_assembly(registry, logger):
-    """Create an AttributeAssembly for testing."""
     return AttributeAssembly(registry, logger)
 
 
 @pytest.fixture
 def validator(registry, logger, assembly):
-    """Create a ProfileValidator for testing."""
     return ProfileValidator(registry, logger, assembly)
 
 
 @pytest.fixture
 def minimal_record():
-    """Create a minimal valid record for testing."""
+    """A minimal valid record."""
     return PidRecord(
         pid="test/MinimalRecord",
         data={

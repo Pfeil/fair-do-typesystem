@@ -1,0 +1,19 @@
+{
+  "0.FDO/Type": ["FDO_Profile"],
+  "0.FDO/Profile": ["0.FDO/ProfileDef"],
+  "0.FDO/Data": ["Not_Applicable"],
+  "0.FDO/Name": [
+    {
+      "value": "Must Extend Profile",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/Description": [
+    {
+      "value": "A profile forcing the instances to use the extends attribute.",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/Attribute": ["0.FDO/Extends"],
+  "0.FDO/Extends": ["0.FDO/ProfileDef"]
+}
