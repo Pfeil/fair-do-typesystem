@@ -4,6 +4,8 @@ Logging is not for debugging, but for understanding validation outcomes.
 Uses phases instead of severity levels to show validation flow.
 """
 
+import inspect
+from pathlib import Path
 from typing import List, Optional
 
 
@@ -42,8 +44,11 @@ class ValidationLogger:
     def log_step(self, step: str, message: str, indent: int = 0) -> None:
         """Log a validation step within a phase (only in verbose mode)."""
         if self.verbose:
+            caller = inspect.stack()[1]
+            filename = Path(caller.filename).name
+            lineno = caller.lineno
             prefix: str = "  " * (self.indent_level + indent)
-            print(f"{prefix}{step}: {message}")
+            print(f"{prefix}{step}: {message} ({filename}:{lineno})")
 
     def log_resolution(
         self, pid: str, success: bool, target: Optional[str] = None
@@ -51,9 +56,12 @@ class ValidationLogger:
         """Log a PID resolution event and increment counter."""
         self.resolution_count += 1
         if self.verbose:
+            caller = inspect.stack()[1]
+            filename = Path(caller.filename).name
+            lineno = caller.lineno
             status: str = "✓" if success else "✗"
             target_info: str = f" → {target}" if target else ""
-            print(f"  {status} Resolved {pid}{target_info}")
+            print(f"  {status} Resolved {pid}{target_info} ({filename}:{lineno})")
 
     def enter_context(self) -> None:
         """Increase indent for nested validation (e.g., entering profile chain)."""
