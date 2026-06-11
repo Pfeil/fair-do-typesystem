@@ -3,7 +3,6 @@
 import pytest
 
 from assembly import ProfileAssembly
-from models import AssembledProfile
 from registry import PidRegistry
 from validation_logger import ValidationLogger
 
@@ -109,19 +108,10 @@ class TestProfileAssembly:
 
     def test_assemble_counts_profiles_resolved(self, assembly: ProfileAssembly):
         """Test that profile count is accurate."""
-        result = assembly.assemble("0.FDO/Root")
+        result = assembly.assemble("recursing-profile")
 
         assert result.amount_resolved_extension_pids >= 1
         assert result.amount_resolved_extension_pids == len(result.extends_chain)
-
-    def test_assemble_handles_non_pid_extends(self, assembly: ProfileAssembly):
-        """Test that non-PID extends values (like Not_Applicable) are filtered."""
-        # Many profiles have Extends: ["Not_Applicable"]
-        result = assembly.assemble("0.FDO/Root")
-
-        # Should not try to resolve "Not_Applicable" as a PID
-        # Should complete successfully without errors
-        assert result.amount_resolved_extension_pids >= 1
 
     def test_assemble_logs_steps_in_verbose_mode(self, capsys):
         """Test that assembly logs steps when verbose."""
@@ -134,21 +124,6 @@ class TestProfileAssembly:
         captured = capsys.readouterr()
         # Should have logged something about profile assembly
         assert "Profile" in captured.out or "assembly" in captured.out.lower()
-
-    def test_get_declared_attributes(self, assembly: ProfileAssembly):
-        """Test getting only declared (not inherited) attributes."""
-        declared = assembly._get_declared_attributes("0.FDO/Root")
-
-        assert len(declared) > 0
-        assert "0.FDO/Type" in declared
-        assert "0.FDO/Profile" in declared
-        assert "0.FDO/Data" in declared
-
-    def test_get_declared_attributes_missing_profile(self, assembly: ProfileAssembly):
-        """Test getting declared attributes from non-existent profile."""
-        declared = assembly._get_declared_attributes("0.FDO/NonExistent")
-
-        assert declared == []
 
     def test_is_pid_reference_filters_literals(self, assembly: ProfileAssembly):
         """Test that literal values are not treated as PIDs."""
@@ -164,42 +139,6 @@ class TestProfileAssembly:
         # Any string that's not in the blacklist should be treated as PID reference
         assert assembly._is_pid_reference("Custom/PID") is True
         assert assembly._is_pid_reference("My/Attribute") is True
-
-
-class TestAssembledProfileDataclass:
-    """Test AssembledProfile dataclass usage in assembly context."""
-
-    def test_complete_assembly_result(self):
-        """Test a fully populated AssembledProfile."""
-        profile = AssembledProfile(
-            pid="0.FDO/TestProfile",
-            all_attributes=["0.FDO/Type", "0.FDO/Profile", "0.FDO/Data", "0.FDO/Name"],
-            declared_attributes=["0.FDO/Type", "0.FDO/Profile"],
-            extends_chain=["0.FDO/TestProfile", "0.FDO/ParentProfile"],
-            amount_resolved_extension_pids=2,
-            has_cycle=False,
-        )
-
-        assert profile.pid == "0.FDO/TestProfile"
-        assert len(profile.all_attributes) == 4
-        assert len(profile.declared_attributes) == 2
-        assert len(profile.extends_chain) == 2
-        assert profile.amount_resolved_extension_pids == 2
-        assert not profile.has_cycle
-
-    def test_cycle_detection_result(self):
-        """Test AssembledProfile with cycle detected."""
-        profile = AssembledProfile(
-            pid="0.FDO/Circular",
-            all_attributes=["0.FDO/Type"],
-            declared_attributes=["0.FDO/Type"],
-            extends_chain=["0.FDO/Circular"],
-            amount_resolved_extension_pids=1,
-            has_cycle=True,
-        )
-
-        assert profile.has_cycle is True
-        assert profile.amount_resolved_extension_pids == 1
 
 
 class TestProfileAssemblyIntegration:

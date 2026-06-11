@@ -2,7 +2,13 @@
 
 import pytest
 
-from models import AssembledProfile, PidRecord, ValidationResult, ValidationRules
+from models import (
+    AssembledProfile,
+    PidRecord,
+    UnresolvablePid,
+    ValidationResult,
+    ValidationRules,
+)
 
 
 class TestPidRecord:
@@ -104,12 +110,14 @@ class TestAssembledProfile:
             extends_chain=["0.FDO/ChildProfile", "0.FDO/ParentProfile"],
             amount_resolved_extension_pids=2,
             has_cycle=False,
+            processing_warnings=[UnresolvablePid("asdf")],
         )
 
         assert len(profile.all_attributes) == 4
         assert len(profile.declared_attributes) == 2
         assert profile.amount_resolved_extension_pids == 2
         assert len(profile.extends_chain) == 2
+        assert len(profile.processing_warnings) == 1
 
     def test_cycle_detected(self):
         """Test profile with detected cycle."""

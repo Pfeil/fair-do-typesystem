@@ -178,23 +178,6 @@ class ProfileAssembly:
                         has_cycle,
                     )
 
-    def _get_declared_attributes(self, profile_pid: str) -> List[str]:
-        """
-        Get only the attributes directly declared by a profile (not inherited).
-
-        Args:
-            profile_pid: The PID of the profile
-
-        Returns:
-            List of attribute names declared in this profile's 0.FDO/Attribute
-        """
-        profile = self.registry.resolve_pid(profile_pid)
-        if not profile:
-            return []
-
-        attrs = profile.get_values("0.FDO/Attribute")
-        return [attr for attr in attrs if isinstance(attr, str)]
-
     def _is_pid_reference(self, value: str) -> bool:
         """
         Check if a string is a PID reference (not a literal value).

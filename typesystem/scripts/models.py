@@ -52,17 +52,17 @@ class AssembledProfile:
     # The PID of this profile.
     pid: str
     # All attributes required to this profile. Includes attributes defined in extended profiles.
-    all_attributes: List[str]
+    all_attributes: List[str] = field(default_factory=list)
     # Attributes declared in this profile specifically, exluding extended profiles.
-    declared_attributes: List[str]
+    declared_attributes: List[str] = field(default_factory=list)
     # The list of profiles resolved, in resolving order.
-    extends_chain: List[str]
+    extends_chain: List[str] = field(default_factory=list)
     # The number of profiles extending this profile.
-    amount_resolved_extension_pids: int
+    amount_resolved_extension_pids: int = 0
     # Indicates if cycles occurred in the profile chain.
-    has_cycle: bool
+    has_cycle: bool = False
     # Warnings during the cretion of this class will be appended to this array.
-    processing_warnings: List[UnresolvablePid]
+    processing_warnings: List[UnresolvablePid] = field(default_factory=list)
 
 
 @dataclass
