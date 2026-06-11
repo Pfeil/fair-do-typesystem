@@ -1,13 +1,7 @@
 {
-  "0.FDO/Type": [
-    "FDO_Profile"
-  ],
-  "0.FDO/Profile": [
-    "0.FDO/ProfileDef"
-  ],
-  "0.FDO/Data": [
-    "Not_Applicable"
-  ],
+  "0.FDO/Type": ["FDO_Profile"],
+  "0.FDO/Profile": ["0.FDO/ProfileDef"],
+  "0.FDO/Data": ["Not_Applicable"],
   "0.FDO/Name": [
     {
       "value": "Attribute Definition Profile",
@@ -21,13 +15,11 @@
     }
   ],
   "0.FDO/Attribute": [
-    "0.FDO/Type",
-    "0.FDO/Profile",
-    "0.FDO/Data",
     "0.FDO/Name",
     "0.FDO/Description",
     "0.FDO/ValidationMechanism",
     "0.FDO/DataType",
     "0.FDO/Cardinality"
-  ]
+  ],
+  "0.FDO/Extends": ["0.FDO/Root"]
 }

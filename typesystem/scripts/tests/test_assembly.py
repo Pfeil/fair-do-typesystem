@@ -67,7 +67,7 @@ class TestProfileAssembly:
         result = assembly.assemble("0.FDO/AttributeDef")
 
         # Should have attributes from AttributeDef itself
-        assert len(result.all_attributes) > 0
+        assert len(result.all_attributes) == 8
 
         # All attributes should be strings (PIDs)
         for attr in result.all_attributes:
