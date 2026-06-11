@@ -62,7 +62,7 @@ class TestProfileAssembly:
         assert len(result.all_attributes) == 1
         assert result.has_cycle
 
-    def test_assemble_collects_all_attributes(self, assembly):
+    def test_assemble_collects_all_attributes(self, assembly: ProfileAssembly):
         """Test that all attributes from extension chain are collected."""
         result = assembly.assemble("0.FDO/AttributeDef")
 
