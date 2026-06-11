@@ -25,14 +25,14 @@ class TestProfileAssembly:
         assert result.pid == "0.FDO/Root"
         assert result.profiles_resolved == 1
         assert len(result.all_attributes) == 3  # Root specifies Type, Profile, Data
-        assert len(result.profile_chain) == 1
+        assert len(result.extends_chain) == 1
         assert not result.has_cycle
 
     def test_assemble_profiledef(self, assembly: ProfileAssembly):
         """Test assembling the profile definition."""
         result = assembly.assemble("0.FDO/ProfileDef")
 
-        assert len(result.profile_chain) == 1
+        assert len(result.extends_chain) == 1
         assert result.pid == "0.FDO/ProfileDef"
         assert result.profiles_resolved == 1
         assert len(result.all_attributes) == 6
@@ -43,7 +43,7 @@ class TestProfileAssembly:
     def test_assemble_extended_profile(self, assembly: ProfileAssembly):
         result = assembly.assemble("extending-profile")
 
-        assert len(result.profile_chain) == 2
+        assert len(result.extends_chain) == 2
         assert result.pid == "extending-profile"
         assert result.profiles_resolved == 2
         assert len(result.all_attributes) == 7
@@ -54,24 +54,35 @@ class TestProfileAssembly:
         assert not result.has_cycle
 
     def test_assemble_recursing_profile(self, assembly: ProfileAssembly):
-        result = assembly.assemble("recursing-profile")
+        test_subject = "recursing-profile"
+        result = assembly.assemble(test_subject)
 
-        assert len(result.profile_chain) == 1
-        assert result.pid == "recursing-profile"
-        assert result.profiles_resolved == 1
-        assert len(result.all_attributes) == 1
-        assert result.has_cycle
+        assert result.pid in result.extends_chain, (
+            f"PID {result.pid} should be in extends chain"
+        )
+        assert result.profiles_resolved == 4, (
+            f"Expected three extends declarations from self and one from an extension, got {result.profiles_resolved}"
+        )
+        assert len(result.all_attributes) == 8, (
+            f"Expected 8 attributes: one from itself, and 1+6 from the extensions. Got {len(result.all_attributes)}"
+        )
+        assert result.has_cycle, "Expected cycle to be detected"
+        assert len(result.processing_warnings) == 1, (
+            f"{test_subject} has one unresolvable reference, got {len(result.processing_warnings)}"
+        )
 
     def test_assemble_collects_all_attributes(self, assembly: ProfileAssembly):
         """Test that all attributes from extension chain are collected."""
         result = assembly.assemble("0.FDO/AttributeDef")
 
-        # Should have attributes from AttributeDef itself
-        assert len(result.all_attributes) == 8
+        assert len(result.all_attributes) == 8, (
+            f"Expected 5+3 attributes, got {len(result.all_attributes)}"
+        )
 
-        # All attributes should be strings (PIDs)
         for attr in result.all_attributes:
-            assert isinstance(attr, str)
+            assert isinstance(attr, str), (
+                f"Expected attribute to be a string (PID), got {type(attr)}"
+            )
 
     def test_assemble_avoids_duplicate_attributes(self, assembly: ProfileAssembly):
         """Test that duplicate attributes are not added multiple times."""
@@ -86,19 +97,22 @@ class TestProfileAssembly:
 
     def test_assemble_tracks_extends_chain(self, assembly: ProfileAssembly):
         """Test that extension chain is properly tracked."""
-        result = assembly.assemble("0.FDO/ProfileDef")
+        test_subject: str = "recursing-profile"
+        result = assembly.assemble(test_subject)
 
-        assert len(result.profile_chain) > 0
-        assert "0.FDO/ProfileDef" in result.profile_chain
-        # Chain should be in resolution order
-        assert result.profile_chain[0] == "0.FDO/ProfileDef"
+        # Order in profile
+        assert result.extends_chain[0] == test_subject
+        assert result.extends_chain[1] == "extending-nonexisting"
+        assert result.extends_chain[2] == "extending-profile"
+        # From the "extending-profile"
+        assert result.extends_chain[3] == "0.FDO/ProfileDef"
 
     def test_assemble_counts_profiles_resolved(self, assembly: ProfileAssembly):
         """Test that profile count is accurate."""
         result = assembly.assemble("0.FDO/Root")
 
         assert result.profiles_resolved >= 1
-        assert result.profiles_resolved == len(result.profile_chain)
+        assert result.profiles_resolved == len(result.extends_chain)
 
     def test_assemble_handles_non_pid_extends(self, assembly: ProfileAssembly):
         """Test that non-PID extends values (like Not_Applicable) are filtered."""
@@ -161,7 +175,7 @@ class TestAssembledProfileDataclass:
             pid="0.FDO/TestProfile",
             all_attributes=["0.FDO/Type", "0.FDO/Profile", "0.FDO/Data", "0.FDO/Name"],
             declared_attributes=["0.FDO/Type", "0.FDO/Profile"],
-            profile_chain=["0.FDO/TestProfile", "0.FDO/ParentProfile"],
+            extends_chain=["0.FDO/TestProfile", "0.FDO/ParentProfile"],
             profiles_resolved=2,
             has_cycle=False,
         )
@@ -169,7 +183,7 @@ class TestAssembledProfileDataclass:
         assert profile.pid == "0.FDO/TestProfile"
         assert len(profile.all_attributes) == 4
         assert len(profile.declared_attributes) == 2
-        assert len(profile.profile_chain) == 2
+        assert len(profile.extends_chain) == 2
         assert profile.profiles_resolved == 2
         assert not profile.has_cycle
 
@@ -179,7 +193,7 @@ class TestAssembledProfileDataclass:
             pid="0.FDO/Circular",
             all_attributes=["0.FDO/Type"],
             declared_attributes=["0.FDO/Type"],
-            profile_chain=["0.FDO/Circular"],
+            extends_chain=["0.FDO/Circular"],
             profiles_resolved=1,
             has_cycle=True,
         )
@@ -218,7 +232,7 @@ class TestProfileAssemblyIntegration:
             assert result.pid == profile_pid
             assert result.profiles_resolved >= 1
             assert len(result.all_attributes) > 0
-            assert len(result.profile_chain) > 0
+            assert len(result.extends_chain) > 0
 
     def test_assemble_preserves_attribute_order(self, assembly):
         """Test that attribute order is preserved (first occurrence wins)."""

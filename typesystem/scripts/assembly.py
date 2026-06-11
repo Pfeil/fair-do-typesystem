@@ -10,6 +10,8 @@ and merging. Validators use assembled data without worrying about how it was gat
 
 from typing import Any, List, Optional, Set
 
+from models import UnresolvablePid
+
 try:
     # When imported as a package
     from .helpers import MutBool
@@ -59,8 +61,10 @@ class ProfileAssembly:
             AssembledProfile with all attributes from the extension chain
         """
         visited: Set[str] = set()
+        root_attributes: List[str] = []
         all_attrs: List[str] = []
-        profile_chain: List[str] = []
+        extends_chain: List[str] = []
+        processing_warnings: List[UnresolvablePid] = []
         has_cycle = MutBool(False)
 
         self.logger.log_step(
@@ -68,18 +72,23 @@ class ProfileAssembly:
         )
 
         self._resolve_profile_chain(
-            profile_pid, visited, all_attrs, profile_chain, has_cycle
+            profile_pid,  # root
+            root_attributes,
+            profile_pid,  # "current"
+            visited,
+            all_attrs,
+            extends_chain,
+            processing_warnings,
+            has_cycle,
         )
-
-        # Get declared attributes from the main profile
-        declared_attrs = self._get_declared_attributes(profile_pid)
 
         result = AssembledProfile(
             pid=profile_pid,
             all_attributes=all_attrs,
-            declared_attributes=declared_attrs,
-            profile_chain=profile_chain,
+            declared_attributes=root_attributes,
+            extends_chain=extends_chain,
             profiles_resolved=len(visited),
+            processing_warnings=processing_warnings,
             has_cycle=has_cycle.value,
         )
 
@@ -94,10 +103,13 @@ class ProfileAssembly:
 
     def _resolve_profile_chain(
         self,
+        root: str,
+        root_attributes: List[str],
         pid: str,
         visited: Set[str],
         all_attrs: List[str],
         extends_chain: List[str],
+        processing_warnings: List[UnresolvablePid],
         has_cycle: MutBool,
     ):
         """
@@ -106,6 +118,8 @@ class ProfileAssembly:
         Mutates visited, all_attrs, extends_chain, and has_cycle in place.
 
         Args:
+            root: Root profile PID
+            root_attributes: Attributes of the root profile
             pid: Profile PID to resolve
             visited: Set of already visited PIDs (for cycle detection)
             all_attrs: Accumulated list of all attributes
@@ -127,10 +141,13 @@ class ProfileAssembly:
         profile = self.registry.resolve_pid(pid)
         if not profile:
             self.logger.log_step("Resolution", f"✗ Failed to resolve {pid}", indent=1)
+            processing_warnings.append(UnresolvablePid(pid))
             return
 
         # Add this profile's attributes (avoiding duplicates)
         attrs = profile.get_values("0.FDO/Attribute")
+        if root == pid:
+            root_attributes.extend(attrs)
         new_attrs_count = 0
         for attr in attrs:
             if isinstance(attr, str) and attr not in all_attrs:
@@ -151,7 +168,14 @@ class ProfileAssembly:
             for ext_pid in extends:
                 if self._is_pid_reference(ext_pid):
                     self._resolve_profile_chain(
-                        ext_pid, visited, all_attrs, extends_chain, has_cycle
+                        root,
+                        root_attributes,
+                        ext_pid,
+                        visited,
+                        all_attrs,
+                        extends_chain,
+                        processing_warnings,
+                        has_cycle,
                     )
 
     def _get_declared_attributes(self, profile_pid: str) -> List[str]:

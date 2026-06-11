@@ -91,7 +91,7 @@ class TestAssembledProfile:
         assert profile.pid == "0.FDO/Test"
         assert profile.all_attributes == []
         assert profile.declared_attributes == []
-        assert profile.profile_chain == []
+        assert profile.extends_chain == []
         assert profile.profiles_resolved == 0
         assert profile.has_cycle is False
 
@@ -101,7 +101,7 @@ class TestAssembledProfile:
             pid="0.FDO/ChildProfile",
             all_attributes=["0.FDO/Type", "0.FDO/Profile", "0.FDO/Data", "0.FDO/Name"],
             declared_attributes=["0.FDO/Type", "0.FDO/Profile"],
-            profile_chain=["0.FDO/ChildProfile", "0.FDO/ParentProfile"],
+            extends_chain=["0.FDO/ChildProfile", "0.FDO/ParentProfile"],
             profiles_resolved=2,
             has_cycle=False,
         )
@@ -109,7 +109,7 @@ class TestAssembledProfile:
         assert len(profile.all_attributes) == 4
         assert len(profile.declared_attributes) == 2
         assert profile.profiles_resolved == 2
-        assert len(profile.profile_chain) == 2
+        assert len(profile.extends_chain) == 2
 
     def test_cycle_detected(self):
         """Test profile with detected cycle."""
@@ -117,7 +117,7 @@ class TestAssembledProfile:
             pid="0.FDO/CircularProfile",
             all_attributes=["0.FDO/Type"],
             declared_attributes=["0.FDO/Type"],
-            profile_chain=["0.FDO/CircularProfile"],
+            extends_chain=["0.FDO/CircularProfile"],
             profiles_resolved=1,
             has_cycle=True,
         )

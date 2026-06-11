@@ -14,6 +14,10 @@
       "lang": "en"
     }
   ],
-  "0.FDO/Attribute": ["added_attribute"],
-  "0.FDO/Extends": ["recursing-profile"]
+  "0.FDO/Attribute": ["recursive_attribute"],
+  "0.FDO/Extends": [
+    "recursing-profile",
+    "extending-nonexisting",
+    "extending-profile"
+  ]
 }

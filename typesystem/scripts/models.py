@@ -35,6 +35,13 @@ class PidRecord:
 
 
 @dataclass
+class UnresolvablePid:
+    """Error class that represents a profile that failed to resolve (e.g. is not defined)."""
+
+    pid: str
+
+
+@dataclass
 class AssembledProfile:
     """Complete profile information assembled from profile and all extensions.
 
@@ -51,12 +58,16 @@ class AssembledProfile:
         default_factory=list,
         doc="Attributes declared in this profile specifically, exluding extended profiles.",
     )
-    profile_chain: List[str] = field(
+    extends_chain: List[str] = field(
         default_factory=list, doc="The list of profiles resolved, in resolving order."
     )
     profiles_resolved: int = field(default=0, doc="The number of profiles resolved.")
     has_cycle: bool = field(
         default=False, doc="Indicates if cycles occurred in the profile chain."
+    )
+    processing_warnings: List[UnresolvablePid] = field(
+        default_factory=list,
+        doc="Warnings during the cretion of this class will be appended to this array.",
     )
 
 
