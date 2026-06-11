@@ -49,28 +49,20 @@ class AssembledProfile:
     entire extension chain, with metadata about the resolution process.
     """
 
-    pid: str = field(default="", doc="The PID of this profile.")
-    all_attributes: List[str] = field(
-        default_factory=list,
-        doc="All attributes required to this profile. Includes attributes defined in extended profiles.",
-    )
-    declared_attributes: List[str] = field(
-        default_factory=list,
-        doc="Attributes declared in this profile specifically, exluding extended profiles.",
-    )
-    extends_chain: List[str] = field(
-        default_factory=list, doc="The list of profiles resolved, in resolving order."
-    )
-    amount_resolved_extension_pids: int = field(
-        default=0, doc="The number of profiles resolved."
-    )
-    has_cycle: bool = field(
-        default=False, doc="Indicates if cycles occurred in the profile chain."
-    )
-    processing_warnings: List[UnresolvablePid] = field(
-        default_factory=list,
-        doc="Warnings during the cretion of this class will be appended to this array.",
-    )
+    # The PID of this profile.
+    pid: str
+    # All attributes required to this profile. Includes attributes defined in extended profiles.
+    all_attributes: List[str]
+    # Attributes declared in this profile specifically, exluding extended profiles.
+    declared_attributes: List[str]
+    # The list of profiles resolved, in resolving order.
+    extends_chain: List[str]
+    # The number of profiles extending this profile.
+    amount_resolved_extension_pids: int
+    # Indicates if cycles occurred in the profile chain.
+    has_cycle: bool
+    # Warnings during the cretion of this class will be appended to this array.
+    processing_warnings: List[UnresolvablePid]
 
 
 @dataclass
