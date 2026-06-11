@@ -57,7 +57,7 @@ class AssembledProfile:
     declared_attributes: List[str] = field(default_factory=list)
     # The list of profiles resolved, in resolving order.
     extends_chain: List[str] = field(default_factory=list)
-    # The number of profiles extending this profile.
+    # The number of profiles this profile extends.
     amount_resolved_extension_pids: int = 0
     # Indicates if cycles occurred in the profile chain.
     has_cycle: bool = False
