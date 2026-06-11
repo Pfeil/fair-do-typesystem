@@ -60,7 +60,7 @@ class ProfileAssembly:
         """
         visited: Set[str] = set()
         all_attrs: List[str] = []
-        extends_chain: List[str] = []
+        profile_chain: List[str] = []
         has_cycle = MutBool(False)
 
         self.logger.log_step(
@@ -68,7 +68,7 @@ class ProfileAssembly:
         )
 
         self._resolve_profile_chain(
-            profile_pid, visited, all_attrs, extends_chain, has_cycle
+            profile_pid, visited, all_attrs, profile_chain, has_cycle
         )
 
         # Get declared attributes from the main profile
@@ -78,7 +78,7 @@ class ProfileAssembly:
             pid=profile_pid,
             all_attributes=all_attrs,
             declared_attributes=declared_attrs,
-            extends_chain=extends_chain,
+            profile_chain=profile_chain,
             profiles_resolved=len(visited),
             has_cycle=has_cycle.value,
         )
