@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.10"
 
 [[package]]
@@ -146,12 +146,6 @@ name = "fdo-typesystem-tools"
 version = "0.1.0"
 source = { editable = "." }
 
-[package.optional-dependencies]
-dev = [
-    { name = "pytest" },
-    { name = "pytest-cov" },
-]
-
 [package.dev-dependencies]
 dev = [
     { name = "pytest" },
@@ -159,11 +153,6 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0" },
-]
-provides-extras = ["dev"]
 
 [package.metadata.requires-dev]
 dev = [
