@@ -292,15 +292,17 @@ class AttributeValidator:
         Returns:
             True if cardinality is satisfied
         """
+        min_count: int
+        max_count: Optional[int]
         try:
             # Parse cardinality expression
             if ".." in cardinality_str:
                 parts: List[str] = cardinality_str.split("..")
-                min_count: int = int(parts[0])
-                max_count: Optional[int] = None if parts[1] == "*" else int(parts[1])
+                min_count = int(parts[0])
+                max_count = None if parts[1] == "*" else int(parts[1])
             else:
                 min_count = int(cardinality_str)
-                max_count: int = min_count
+                max_count = min_count
 
             # Check constraints
             if actual_count < min_count:
