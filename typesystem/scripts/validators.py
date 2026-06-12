@@ -133,8 +133,8 @@ class ProfileValidator:
         """
         Get the list of required attributes from an assembled profile.
 
-        For now, all attributes in the profile's declared list are required.
-        Future implementations may support optional attributes via cardinality.
+        In the current draft, all attributes in the profile's declared list are required,
+        and cardinality is determined in the attributes themself.
 
         Args:
             assembled: The assembled profile information
@@ -142,10 +142,7 @@ class ProfileValidator:
         Returns:
             List of required attribute names
         """
-        # Filter to only declared attributes (not inherited)
-        # This is what the profile itself requires
-        result: List[str] = assembled.declared_attributes
-        return result
+        return assembled.all_attributes
 
     def _is_pid_reference(self, value: Any) -> bool:
         """
