@@ -3,7 +3,6 @@
 from models import (
     ExtensionsInfo,
     PidRecord,
-    ProfilesInfo,
     UnresolvablePid,
     ValidationResult,
     ValidationRules,
@@ -67,6 +66,7 @@ class TestPidRecord:
         )
 
         value = record.get_single_value("0.FDO/Name")
+        assert value
         assert value["value"] == "Test"
 
     def test_get_single_value_multiple(self):
@@ -158,6 +158,7 @@ class TestValidationRules:
         """Test rules with whitelist."""
         rules = ValidationRules(whitelist=["value1", "value2", "value3"])
 
+        assert rules.whitelist
         assert len(rules.whitelist) == 3
         assert "value1" in rules.whitelist
 
@@ -175,7 +176,7 @@ class TestValidationResult:
 
     def test_add_error_marks_invalid(self):
         """Test that adding an error marks result as invalid."""
-        result = ValidationResult()
+        result = ValidationResult(valid=True)
         result.add_error("Missing required attribute")
 
         assert result.valid is False
@@ -220,3 +221,24 @@ class TestValidationResult:
 
         assert result1.valid is False  # Still invalid from error 1
         assert len(result1.errors) == 1
+
+    def test_merge_with_invalid_result(self):
+        """Test merging when first result is valid but second is invalid."""
+        result1 = ValidationResult()  # Valid
+
+        result2 = ValidationResult()
+        result2.add_error("Error 2")  # Invalid
+
+        result1.merge(result2)
+
+        assert result1.valid is False  # Now invalid from result2
+        assert len(result1.errors) == 1
+
+    def test_merge_with_both_valid(self):
+        """Test merging when both results are valid."""
+        result1 = ValidationResult()
+        result2 = ValidationResult()
+        result1.merge(result2)
+
+        assert result1.valid is True
+        assert len(result1.errors) == 0

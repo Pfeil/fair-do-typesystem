@@ -298,86 +298,6 @@ class TestProfileValidator:
 
 
 # =============================================================================
-# TestValidationResultDataclass - Data structure tests
-# =============================================================================
-
-
-class TestValidationResultDataclass:
-    """Test ValidationResult dataclass functionality."""
-
-    def test_initial_state_is_valid(self):
-        """Test that new ValidationResult starts as valid."""
-        result = ValidationResult()
-        assert result.valid is True
-        assert len(result.errors) == 0
-        assert len(result.warnings) == 0
-
-    def test_add_error_marks_invalid(self):
-        """Test that adding an error marks result as invalid."""
-        result = ValidationResult()
-        result.add_error("Test error")
-
-        assert result.valid is False
-        assert len(result.errors) == 1
-        assert "Test error" in result.errors
-
-    def test_add_warning_doesnt_mark_invalid(self):
-        """Test that adding a warning doesn't affect validity."""
-        result = ValidationResult()
-        result.add_warning("Test warning")
-
-        assert result.valid is True
-        assert len(result.warnings) == 1
-        assert "Test warning" in result.warnings
-
-    def test_merge_combines_results(self):
-        """Test merging two validation results."""
-        result1 = ValidationResult()
-        result1.add_error("Error 1")
-        result1.add_warning("Warning 1")
-        result1.profiles_checked = 2
-        result1.attributes_checked = 5
-
-        result2 = ValidationResult()
-        result2.add_error("Error 2")
-        result2.add_warning("Warning 2")
-        result2.profiles_checked = 3
-        result2.attributes_checked = 7
-
-        result1.merge(result2)
-
-        assert result1.valid is False
-        assert len(result1.errors) == 2
-        assert len(result1.warnings) == 2
-        assert result1.profiles_checked == 5
-        assert result1.attributes_checked == 12
-
-    def test_merge_with_valid_result(self):
-        """Test merging when second result is valid."""
-        result1 = ValidationResult()
-        result1.add_error("Error 1")
-
-        result2 = ValidationResult()  # Valid, no errors
-
-        result1.merge(result2)
-
-        assert result1.valid is False  # Still invalid from result1
-        assert len(result1.errors) == 1
-
-    def test_merge_with_invalid_result(self):
-        """Test merging when first result is valid but second is invalid."""
-        result1 = ValidationResult()  # Valid
-
-        result2 = ValidationResult()
-        result2.add_error("Error 2")
-
-        result1.merge(result2)
-
-        assert result1.valid is False  # Now invalid from result2
-        assert len(result1.errors) == 1
-
-
-# =============================================================================
 # TestProfileValidatorIntegration - Integration with real profiles
 # =============================================================================
 
@@ -396,6 +316,9 @@ class TestProfileValidatorIntegration:
 
         assert result.valid is True
         assert len(result.errors) == 0
+        assert len(result.warnings) == 0
+        assert len(result.additional_attributes) == 0
+        assert result.profiles_checked == 1
 
     def test_validate_profiledef_profile(
         self, validator: ProfileValidator, logger: ValidationLogger
@@ -408,9 +331,15 @@ class TestProfileValidatorIntegration:
 
         assert result.valid is True
         assert len(result.errors) == 0
+        assert len(result.warnings) == 0
+        assert len(result.additional_attributes) == 0
+        assert result.profiles_checked == 1
 
     def test_validation_shows_detailed_logging(
-        self, validator: ProfileValidator, logger: ValidationLogger
+        self,
+        validator: ProfileValidator,
+        logger: ValidationLogger,
+        capsys: pytest.CaptureFixture,
     ):
         """Test that validation produces detailed logs in verbose mode."""
         logger.verbose = True
@@ -418,45 +347,33 @@ class TestProfileValidatorIntegration:
         assert profiledef_record
 
         result = validator.validate(profiledef_record)
+        captured = capsys.readouterr()
 
-        # Just verify it completes without errors
         assert result.valid is True
+        assert "Attribute Check:".lower() in captured.out.lower()
 
     def test_validation_handles_extended_profiles(
         self,
         validator: ProfileValidator,
         logger: ValidationLogger,
         assembly: ExtensionsAssembly,
+        capsys: pytest.CaptureFixture,
     ):
         """Test validation with profiles that extend other profiles."""
-        # ProfileDef extends... (check if it extends anything)
-        profiledef_record = validator.registry.resolve_pid("0.FDO/ProfileDef")
-        assert profiledef_record is not None
+        record = validator.registry.resolve_pid("data")
+        assert record
 
-        result = validator.validate(profiledef_record)
+        # Data uses a profile making use of 0.FDO/Extends:
+        extending_profile_name: str = "extended-profile"
+        logger.verbose = True
 
-        # Should validate successfully
-        assert result.valid is True
-
-    def test_assembly_integration(
-        self,
-        validator: ProfileValidator,
-        logger: ValidationLogger,
-        assembly: ExtensionsAssembly,
-    ):
-        """Test that validator correctly uses assembly component."""
-        # Assemble a profile first
-        assembled = assembly.assemble("0.FDO/Root")
-        assert assembled.pid == "0.FDO/Root"
-        assert len(assembled.declared_attributes) > 0
-
-        # Then validate using the same assembly
-        root_record = validator.registry.resolve_pid("0.FDO/Root")
-        assert root_record
-        result = validator.validate(root_record)
+        result = validator.validate(record)
+        captured = capsys.readouterr()
 
         assert result.valid is True
-        assert result.profiles_checked >= 1
+        # It has 2 direct profiles, one is extending
+        assert result.profiles_checked == 2
+        assert f"Resolved {extending_profile_name}" in captured.out
 
 
 # =============================================================================

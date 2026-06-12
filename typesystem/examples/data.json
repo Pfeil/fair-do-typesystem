@@ -1,0 +1,18 @@
+{
+  "0.FDO/Type": ["FDO_Data"],
+  "0.FDO/Profile": ["extended-profile", "0.FDO/Root"],
+  "0.FDO/Data": ["https://example.com/data.bin"],
+  "0.FDO/Name": [
+    {
+      "value": "Data FDO",
+      "lang": "en"
+    }
+  ],
+  "0.FDO/Description": [
+    {
+      "value": "Some FDO that is not part of the typesystem or extending it, but rather just something following their profiles.",
+      "lang": "en"
+    }
+  ],
+  "added-attribute": ["my_value"]
+}
