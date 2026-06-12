@@ -27,8 +27,7 @@ except ImportError:
 class ProfileValidator:
     """Validates that a record conforms to its claimed profile(s).
 
-    Uses ExtensionsAssembly to resolve complete profile requirements,
-    then checks if the record has all required attributes.
+    Checks if the record has all required attributes.
     """
 
     def __init__(
@@ -41,18 +40,15 @@ class ProfileValidator:
         self.logger: ValidationLogger = logger
         self.assembly: ExtensionsAssembly = assembly
 
-    def validate(self, record: PidRecord, record_pid: str) -> ValidationResult:
+    def validate(self, record: PidRecord) -> ValidationResult:
         """
         Validate record against its profile(s).
 
-        For each profile referenced by the record:
-        1. Assemble complete profile (including extensions)
-        2. Check all required attributes are present
-        3. Report missing attributes as errors
+        This means to check that all required attributes are present,
+        as specified in the profiles given in the record.
 
         Args:
             record: The record to validate
-            record_pid: PID of the record (for logging)
 
         Returns:
             ValidationResult with errors/warnings
@@ -63,10 +59,10 @@ class ProfileValidator:
         if not profile_refs:
             self.logger.log_step(
                 "Profile Validation",
-                f"⚠ No profile references found in {record_pid}",
+                f"⚠ No profile references found in {record.pid}",
                 indent=0,
             )
-            result.add_warning(f"No 0.FDO/Profile attribute in {record_pid}")
+            result.add_warning(f"No 0.FDO/Profile attribute in {record.pid}")
             return result
 
         self.logger.log_step(
@@ -90,14 +86,13 @@ class ProfileValidator:
                 indent=1,
             )
 
-            # ASSEMBLY: Get complete profile info
             assembled: ExtensionsInfo = self.assembly.assemble(profile_ref)
             result.profiles_checked += 1
 
             if assembled.has_cycle:
                 self.logger.log_step(
                     "Cycle Detection",
-                    f"⚠ Cycle detected in profile chain, using partial info",
+                    "⚠ Cycle detected in profile chain",
                     indent=2,
                 )
                 result.add_warning(
