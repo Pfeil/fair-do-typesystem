@@ -10,7 +10,13 @@ and merging. Validators use assembled data without worrying about how it was gat
 
 from typing import Any, List, Optional, Set
 
-from models import ProfilesInfo, UnresolvablePid
+from models import (
+    CycleDetected,
+    ProfilesInfo,
+    RecordProcessingError,
+    UnresolvablePid,
+    ZeroProfilesContained,
+)
 
 try:
     # When imported as a package
@@ -33,20 +39,39 @@ class ProfilesAssembly:
 
     def assemble(self, pid: str) -> ProfilesInfo | None:
         record = self.registry.resolve_pid(pid)
-        if not record:
-            return None
-        warnings: List[UnresolvablePid] = []
+        return self.assemble_record(record) if record else None
+
+    def assemble_record(self, record: PidRecord) -> ProfilesInfo:
+        result = ProfilesInfo(record=record)
         profile_pids = record.get_values("0.FDO/Profile")
+        if not profile_pids or len(profile_pids) == 0:
+            self.logger.log_step(
+                "Profile Assembly",
+                f"⚠ No profile references found in {record.pid}",
+                indent=0,
+            )
+            result.process_warnings.append(
+                ZeroProfilesContained(pid_without_profiles=record.pid)
+            )
+            return result
+
         for profile_pid in profile_pids:
             if not isinstance(profile_pid, str):
-                warnings.append(UnresolvablePid(profile_pid))
+                result.process_warnings.append(UnresolvablePid(profile_pid))
+
         profile_pids = list(filter(lambda p: isinstance(p, str), profile_pids))
         assembly = ExtensionsAssembly(self.registry, self.logger)
-        return ProfilesInfo(
-            process_warnings=warnings,
-            record=record,
-            profiles=[assembly.assemble(profile_pid) for profile_pid in profile_pids],
-        )
+
+        def process_profile(profile_pid: str) -> ExtensionsInfo:
+            result = assembly.assemble(profile_pid)
+            if result.has_cycle:
+                result.processing_warnings.append(
+                    CycleDetected(pid=profile_pid, attribute="0.FDO/Profile")
+                )
+            return result
+
+        result.profiles = [process_profile(profile_pid) for profile_pid in profile_pids]
+        return result
 
 
 class ExtensionsAssembly:
@@ -78,7 +103,7 @@ class ExtensionsAssembly:
         root_attributes: List[str] = []
         all_attrs: List[str] = []
         extends_chain: List[str] = []
-        processing_warnings: List[UnresolvablePid] = []
+        processing_warnings: List[RecordProcessingError] = []
         has_cycle = MutBool(False)
 
         self.logger.log_step(
@@ -123,7 +148,7 @@ class ExtensionsAssembly:
         visited: Set[str],
         all_attrs: List[str],
         extends_chain: List[str],
-        processing_warnings: List[UnresolvablePid],
+        processing_warnings: List[RecordProcessingError],
         has_cycle: MutBool,
     ):
         """

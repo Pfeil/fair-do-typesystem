@@ -12,13 +12,13 @@ Tests are organized into classes:
 import pytest
 
 try:
-    from assembly import AttributeAssembly, ExtensionsAssembly
+    from assembly import AttributeAssembly
     from models import PidRecord, ValidationResult, ValidationRules
     from registry import PidRegistry
     from validation_logger import ValidationLogger
     from validators import AttributeValidator
 except ImportError:
-    from assembly import AttributeAssembly, ExtensionsAssembly
+    from assembly import AttributeAssembly
     from models import PidRecord, ValidationResult, ValidationRules
     from registry import PidRegistry
     from validation_logger import ValidationLogger
@@ -31,31 +31,31 @@ except ImportError:
 
 
 @pytest.fixture
-def logger():
+def logger() -> ValidationLogger:
     """Create a ValidationLogger for testing."""
     return ValidationLogger(verbose=False)
 
 
 @pytest.fixture
-def registry(logger):
+def registry(logger) -> PidRegistry:
     """Create a PidRegistry for testing."""
     return PidRegistry(logger)
 
 
 @pytest.fixture
-def attribute_assembly(registry, logger):
+def attribute_assembly(registry, logger) -> AttributeAssembly:
     """Create an AttributeAssembly for testing."""
     return AttributeAssembly(registry, logger)
 
 
 @pytest.fixture
-def attribute_validator(registry, logger, attribute_assembly):
+def attribute_validator(registry, logger, attribute_assembly) -> AttributeValidator:
     """Create an AttributeValidator for testing."""
     return AttributeValidator(registry, logger, attribute_assembly)
 
 
 @pytest.fixture
-def sample_record_with_type():
+def sample_record_with_type() -> PidRecord:
     """Create a record with 0.FDO/Type attribute for testing."""
     return PidRecord(
         pid="test/WithType",
@@ -77,7 +77,9 @@ def sample_record_with_type():
 class TestAttributeAssembly:
     """Test AttributeAssembly core functionality."""
 
-    def test_assemble_rules_for_type_attribute(self, attribute_assembly, logger):
+    def test_assemble_rules_for_type_attribute(
+        self, attribute_assembly: AttributeAssembly
+    ):
         """Test assembling rules for 0.FDO/Type."""
         rules = attribute_assembly.assemble_rules("0.FDO/Type")
 
@@ -85,7 +87,9 @@ class TestAttributeAssembly:
         assert rules.primitive_type == "string"
         assert rules.syntax_definition_pid == "0.FDO/StringSyntax"
 
-    def test_assemble_rules_for_cardinality_attribute(self, attribute_assembly, logger):
+    def test_assemble_rules_for_cardinality_attribute(
+        self, attribute_assembly: AttributeAssembly
+    ):
         """Test assembling rules for 0.FDO/Cardinality."""
         rules = attribute_assembly.assemble_rules("0.FDO/Cardinality")
 
@@ -93,14 +97,18 @@ class TestAttributeAssembly:
         # Cardinality has its own custom syntax
         assert rules.syntax_definition_pid is not None
 
-    def test_assemble_rules_for_name_attribute(self, attribute_assembly, logger):
+    def test_assemble_rules_for_name_attribute(
+        self, attribute_assembly: AttributeAssembly
+    ):
         """Test assembling rules for 0.FDO/Name."""
         rules = attribute_assembly.assemble_rules("0.FDO/Name")
 
         assert rules.cardinality == "1..*"
         assert rules.primitive_type == "string"
 
-    def test_assemble_rules_nonexistent_attribute(self, attribute_assembly, logger):
+    def test_assemble_rules_nonexistent_attribute(
+        self, attribute_assembly: AttributeAssembly
+    ):
         """Test assembling rules for non-existent attribute."""
         rules = attribute_assembly.assemble_rules("0.FDO/NonExistent")
 
@@ -109,7 +117,7 @@ class TestAttributeAssembly:
         assert rules.primitive_type is None
 
     def test_assemble_rules_extracts_all_syntax_fields(
-        self, attribute_assembly, logger
+        self, attribute_assembly: AttributeAssembly
     ):
         """Test that all syntax fields are extracted."""
         # Test with StringSyntax which has primitive type
@@ -122,7 +130,7 @@ class TestAttributeAssembly:
         assert hasattr(rules, "blacklist")
 
     def test_assemble_rules_logs_steps_in_verbose_mode(
-        self, attribute_assembly, logger
+        self, attribute_assembly: AttributeAssembly, logger: ValidationLogger
     ):
         """Test that assembly produces logs in verbose mode."""
         logger.verbose = True
@@ -140,7 +148,9 @@ class TestAttributeValidator:
     """Test AttributeValidator core functionality."""
 
     def test_validate_record_with_valid_attributes(
-        self, attribute_validator, sample_record_with_type, logger
+        self,
+        attribute_validator: AttributeValidator,
+        sample_record_with_type: PidRecord,
     ):
         """Test validating a record with valid attributes."""
         result = attribute_validator.validate(sample_record_with_type, "test/WithType")
@@ -149,7 +159,9 @@ class TestAttributeValidator:
         assert result.attributes_checked > 0
 
     def test_validate_skips_metadata_attributes(
-        self, attribute_validator, sample_record_with_type, logger
+        self,
+        attribute_validator: AttributeValidator,
+        sample_record_with_type: PidRecord,
     ):
         """Test that metadata attributes (Type, Profile, Data) are skipped."""
         result = attribute_validator.validate(sample_record_with_type, "test/WithType")
@@ -158,7 +170,10 @@ class TestAttributeValidator:
         # (or other non-metadata attributes)
         pass  # Just verify it doesn't crash
 
-    def test_validate_empty_record(self, attribute_validator, logger):
+    def test_validate_empty_record(
+        self,
+        attribute_validator: AttributeValidator,
+    ):
         """Test validating a record with no attributes."""
         empty_record = PidRecord(
             pid="test/Empty",
@@ -181,102 +196,185 @@ class TestAttributeValidator:
 class TestCardinalityValidation:
     """Test cardinality validation logic."""
 
-    def test_check_cardinality_exactly_one(self, attribute_validator, logger):
+    def test_check_cardinality_exactly_one(
+        self, attribute_validator: AttributeValidator
+    ):
         """Test cardinality "1" (exactly one)."""
         result = ValidationResult()
 
         # Valid: exactly one value
-        assert attribute_validator._check_cardinality(1, "1", "test", result) is True
+        assert (
+            attribute_validator._check_cardinality(
+                1, "1", "test", "owning_record_pid", result
+            )
+            is True
+        )
 
         # Invalid: zero values
         result = ValidationResult()
-        assert attribute_validator._check_cardinality(0, "1", "test", result) is False
+        assert (
+            attribute_validator._check_cardinality(
+                0, "1", "test", "owning_record_pid", result
+            )
+            is False
+        )
         assert len(result.errors) == 1
 
         # Invalid: two values
         result = ValidationResult()
-        assert attribute_validator._check_cardinality(2, "1", "test", result) is False
+        assert (
+            attribute_validator._check_cardinality(
+                2, "1", "test", "owning_record_pid", result
+            )
+            is False
+        )
         assert len(result.errors) == 1
 
-    def test_check_cardinality_zero_or_one(self, attribute_validator, logger):
+    def test_check_cardinality_zero_or_one(
+        self, attribute_validator: AttributeValidator
+    ):
         """Test cardinality "0..1" (optional)."""
         result = ValidationResult()
 
         # Valid: zero values
-        assert attribute_validator._check_cardinality(0, "0..1", "test", result) is True
+        assert (
+            attribute_validator._check_cardinality(
+                0, "0..1", "test", "owning_record_pid", result
+            )
+            is True
+        )
 
         # Valid: one value
         result = ValidationResult()
-        assert attribute_validator._check_cardinality(1, "0..1", "test", result) is True
+        assert (
+            attribute_validator._check_cardinality(
+                1, "0..1", "test", "owning_record_pid", result
+            )
+            is True
+        )
 
         # Invalid: two values
         result = ValidationResult()
         assert (
-            attribute_validator._check_cardinality(2, "0..1", "test", result) is False
+            attribute_validator._check_cardinality(
+                2, "0..1", "test", "owning_record_pid", result
+            )
+            is False
         )
         assert len(result.errors) == 1
 
-    def test_check_cardinality_one_or_more(self, attribute_validator, logger):
+    def test_check_cardinality_one_or_more(
+        self, attribute_validator: AttributeValidator
+    ):
         """Test cardinality "1..*" (mandatory, repeatable)."""
         result = ValidationResult()
 
         # Valid: one value
-        assert attribute_validator._check_cardinality(1, "1..*", "test", result) is True
+        assert (
+            attribute_validator._check_cardinality(
+                1, "1..*", "test", "owning_record_pid", result
+            )
+            is True
+        )
 
         # Valid: multiple values
         result = ValidationResult()
-        assert attribute_validator._check_cardinality(5, "1..*", "test", result) is True
+        assert (
+            attribute_validator._check_cardinality(
+                5, "1..*", "test", "owning_record_pid", result
+            )
+            is True
+        )
 
         # Invalid: zero values
         result = ValidationResult()
         assert (
-            attribute_validator._check_cardinality(0, "1..*", "test", result) is False
+            attribute_validator._check_cardinality(
+                0, "1..*", "test", "owning_record_pid", result
+            )
+            is False
         )
         assert len(result.errors) == 1
 
-    def test_check_cardinality_zero_or_more(self, attribute_validator, logger):
+    def test_check_cardinality_zero_or_more(
+        self, attribute_validator: AttributeValidator
+    ):
         """Test cardinality "0..*" (optional, repeatable)."""
         result = ValidationResult()
 
         # Valid: any number of values
-        assert attribute_validator._check_cardinality(0, "0..*", "test", result) is True
-        result = ValidationResult()
-        assert attribute_validator._check_cardinality(1, "0..*", "test", result) is True
+        assert (
+            attribute_validator._check_cardinality(
+                0, "0..*", "test", "owning_record_pid", result
+            )
+            is True
+        )
         result = ValidationResult()
         assert (
-            attribute_validator._check_cardinality(100, "0..*", "test", result) is True
+            attribute_validator._check_cardinality(
+                1, "0..*", "test", "owning_record_pid", result
+            )
+            is True
+        )
+        result = ValidationResult()
+        assert (
+            attribute_validator._check_cardinality(
+                100, "0..*", "test", "owning_record_pid", result
+            )
+            is True
         )
 
-    def test_check_cardinality_range(self, attribute_validator, logger):
+    def test_check_cardinality_range(self, attribute_validator: AttributeValidator):
         """Test cardinality "2..3" (range)."""
         result = ValidationResult()
 
         # Valid: within range
-        assert attribute_validator._check_cardinality(2, "2..3", "test", result) is True
+        assert (
+            attribute_validator._check_cardinality(
+                2, "2..3", "test", "owning_record_pid", result
+            )
+            is True
+        )
         result = ValidationResult()
-        assert attribute_validator._check_cardinality(3, "2..3", "test", result) is True
+        assert (
+            attribute_validator._check_cardinality(
+                3, "2..3", "test", "owning_record_pid", result
+            )
+            is True
+        )
 
         # Invalid: below range
         result = ValidationResult()
         assert (
-            attribute_validator._check_cardinality(1, "2..3", "test", result) is False
+            attribute_validator._check_cardinality(
+                1, "2..3", "test", "owning_record_pid", result
+            )
+            is False
         )
         assert len(result.errors) == 1
 
         # Invalid: above range
         result = ValidationResult()
         assert (
-            attribute_validator._check_cardinality(4, "2..3", "test", result) is False
+            attribute_validator._check_cardinality(
+                4, "2..3", "test", "owning_record_pid", result
+            )
+            is False
         )
         assert len(result.errors) == 1
 
-    def test_check_cardinality_invalid_expression(self, attribute_validator, logger):
+    def test_check_cardinality_invalid_expression(
+        self, attribute_validator: AttributeValidator
+    ):
         """Test invalid cardinality expression handling."""
         result = ValidationResult()
 
         # Should not crash, should return True (permissive)
         assert (
-            attribute_validator._check_cardinality(1, "invalid", "test", result) is True
+            attribute_validator._check_cardinality(
+                1, "invalid", "test", "owning_record_pid", result
+            )
+            is True
         )
 
 
@@ -288,14 +386,14 @@ class TestCardinalityValidation:
 class TestTypeValidation:
     """Test primitive type validation logic."""
 
-    def test_check_type_string(self, attribute_validator, logger):
+    def test_check_type_string(self, attribute_validator: AttributeValidator):
         """Test string type checking."""
         assert attribute_validator._check_type("hello", "string") is True
         assert attribute_validator._check_type("", "string") is True
         assert attribute_validator._check_type(123, "string") is False
         assert attribute_validator._check_type(True, "string") is False
 
-    def test_check_type_number(self, attribute_validator, logger):
+    def test_check_type_number(self, attribute_validator: AttributeValidator):
         """Test number type checking."""
         assert attribute_validator._check_type(123, "number") is True
         assert attribute_validator._check_type(12.5, "number") is True
@@ -304,7 +402,7 @@ class TestTypeValidation:
             attribute_validator._check_type(True, "number") is False
         )  # bool is not number
 
-    def test_check_type_integer(self, attribute_validator, logger):
+    def test_check_type_integer(self, attribute_validator: AttributeValidator):
         """Test integer type checking."""
         assert attribute_validator._check_type(123, "integer") is True
         assert attribute_validator._check_type(12.5, "integer") is False
@@ -313,14 +411,14 @@ class TestTypeValidation:
             attribute_validator._check_type(True, "integer") is False
         )  # bool is not int
 
-    def test_check_type_boolean(self, attribute_validator, logger):
+    def test_check_type_boolean(self, attribute_validator: AttributeValidator):
         """Test boolean type checking."""
         assert attribute_validator._check_type(True, "boolean") is True
         assert attribute_validator._check_type(False, "boolean") is True
         assert attribute_validator._check_type(1, "boolean") is False
         assert attribute_validator._check_type("true", "boolean") is False
 
-    def test_check_type_unknown_type(self, attribute_validator, logger):
+    def test_check_type_unknown_type(self, attribute_validator: AttributeValidator):
         """Test unknown type (should be permissive)."""
         assert attribute_validator._check_type("anything", "unknown_type") is True
 
@@ -333,13 +431,15 @@ class TestTypeValidation:
 class TestRegexValidation:
     """Test regex pattern validation logic."""
 
-    def test_check_regex_valid_pattern(self, attribute_validator, logger):
+    def test_check_regex_valid_pattern(self, attribute_validator: AttributeValidator):
         """Test regex with valid pattern."""
         # Simple pattern: digits only
         assert attribute_validator._check_regex("123", r"\d+") is True
         assert attribute_validator._check_regex("abc", r"\d+") is False
 
-    def test_check_regex_cardinality_pattern(self, attribute_validator, logger):
+    def test_check_regex_cardinality_pattern(
+        self, attribute_validator: AttributeValidator
+    ):
         """Test regex for cardinality format."""
         # Cardinality pattern from spec
         pattern = r"^(\d+)(\.\.(\d+|\*))?$"
@@ -350,7 +450,7 @@ class TestRegexValidation:
         assert attribute_validator._check_regex("2..3", pattern) is True
         assert attribute_validator._check_regex("abc", pattern) is False
 
-    def test_check_regex_invalid_pattern(self, attribute_validator, logger):
+    def test_check_regex_invalid_pattern(self, attribute_validator: AttributeValidator):
         """Test regex with invalid pattern (should be permissive)."""
         # Invalid regex should not crash
         assert attribute_validator._check_regex("anything", "[invalid") is True
@@ -364,7 +464,7 @@ class TestRegexValidation:
 class TestNumericIntervalValidation:
     """Test numeric interval validation logic."""
 
-    def test_check_interval_min_only(self, attribute_validator, logger):
+    def test_check_interval_min_only(self, attribute_validator: AttributeValidator):
         """Test interval with minimum only."""
         interval = {"min": 0}
 
@@ -372,7 +472,7 @@ class TestNumericIntervalValidation:
         assert attribute_validator._check_numeric_interval(0, interval) is True
         assert attribute_validator._check_numeric_interval(-1, interval) is False
 
-    def test_check_interval_max_only(self, attribute_validator, logger):
+    def test_check_interval_max_only(self, attribute_validator: AttributeValidator):
         """Test interval with maximum only."""
         interval = {"max": 100}
 
@@ -380,7 +480,7 @@ class TestNumericIntervalValidation:
         assert attribute_validator._check_numeric_interval(100, interval) is True
         assert attribute_validator._check_numeric_interval(101, interval) is False
 
-    def test_check_interval_both_bounds(self, attribute_validator, logger):
+    def test_check_interval_both_bounds(self, attribute_validator: AttributeValidator):
         """Test interval with both min and max."""
         interval = {"min": 10, "max": 20}
 
@@ -390,7 +490,7 @@ class TestNumericIntervalValidation:
         assert attribute_validator._check_numeric_interval(9, interval) is False
         assert attribute_validator._check_numeric_interval(21, interval) is False
 
-    def test_check_interval_empty(self, attribute_validator, logger):
+    def test_check_interval_empty(self, attribute_validator: AttributeValidator):
         """Test empty interval (should accept anything)."""
         interval = {}
 
@@ -406,38 +506,54 @@ class TestNumericIntervalValidation:
 class TestWhitelistBlacklistValidation:
     """Test whitelist and blacklist validation logic."""
 
-    def test_validate_value_against_whitelist(self, attribute_validator, logger):
+    def test_validate_value_against_whitelist(
+        self, attribute_validator: AttributeValidator
+    ):
         """Test value validation against whitelist."""
         rules = ValidationRules(whitelist=["red", "green", "blue"])
 
         # Valid: in whitelist
-        result = attribute_validator._validate_value("red", rules, "color")
+        result = attribute_validator._validate_value(
+            "red", rules, "color", "owning_record_pid"
+        )
         assert result.valid is True
 
         # Invalid: not in whitelist
-        result = attribute_validator._validate_value("yellow", rules, "color")
+        result = attribute_validator._validate_value(
+            "yellow", rules, "color", "owning_record_pid"
+        )
         assert result.valid is False
         assert len(result.errors) == 1
 
-    def test_validate_value_against_blacklist(self, attribute_validator, logger):
+    def test_validate_value_against_blacklist(
+        self, attribute_validator: AttributeValidator
+    ):
         """Test value validation against blacklist."""
         rules = ValidationRules(blacklist=["spam", "scam"])
 
         # Valid: not in blacklist
-        result = attribute_validator._validate_value("legit", rules, "type")
+        result = attribute_validator._validate_value(
+            "legit", rules, "type", "owning_record_pid"
+        )
         assert result.valid is True
 
         # Invalid: in blacklist
-        result = attribute_validator._validate_value("spam", rules, "type")
+        result = attribute_validator._validate_value(
+            "spam", rules, "type", "owning_record_pid"
+        )
         assert result.valid is False
         assert len(result.errors) == 1
 
-    def test_validate_value_no_constraints(self, attribute_validator, logger):
+    def test_validate_value_no_constraints(
+        self, attribute_validator: AttributeValidator
+    ):
         """Test value validation with no constraints."""
         rules = ValidationRules()
 
         # Should be valid with no constraints
-        result = attribute_validator._validate_value("anything", rules, "field")
+        result = attribute_validator._validate_value(
+            "anything", rules, "field", "owning_record_pid"
+        )
         assert result.valid is True
 
 
@@ -450,7 +566,7 @@ class TestIntegration:
     """Test integration with real type system data."""
 
     def test_validate_type_attribute_with_real_data(
-        self, attribute_validator, logger, registry
+        self, attribute_validator: AttributeValidator, registry: PidRegistry
     ):
         """Test validating 0.FDO/Type attribute definition."""
         # Get the Type attribute definition
@@ -464,7 +580,7 @@ class TestIntegration:
         assert result.attributes_checked >= 1
 
     def test_validate_cardinality_attribute_with_real_data(
-        self, attribute_validator, logger, registry
+        self, attribute_validator: AttributeValidator, registry: PidRegistry
     ):
         """Test validating 0.FDO/Cardinality attribute definition."""
         # Get the Cardinality attribute definition
@@ -478,7 +594,9 @@ class TestIntegration:
         pass  # Just verify it doesn't crash
 
     def test_assemble_and_validate_combined(
-        self, attribute_assembly, attribute_validator, logger
+        self,
+        attribute_assembly: AttributeAssembly,
+        attribute_validator: AttributeValidator,
     ):
         """Test assembling rules and then validating."""
         # Assemble rules for Type

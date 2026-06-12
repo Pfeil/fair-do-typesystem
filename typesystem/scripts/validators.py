@@ -10,6 +10,15 @@ to assembly components.
 import re
 from typing import Any, Dict, List, Optional, Set
 
+from assembly import ProfilesAssembly
+from models import (
+    CardinalityViolation,
+    MissingRequiredAttribute,
+    ProfilesInfo,
+    ValueViolation,
+    ZeroProfilesContained,
+)
+
 try:
     # When imported as a package
     from .assembly import AttributeAssembly, ExtensionsAssembly
@@ -34,11 +43,13 @@ class ProfileValidator:
         self,
         registry: PidRegistry,
         logger: ValidationLogger,
-        assembly: ExtensionsAssembly,
+        profiles_assembly: ProfilesAssembly,
+        extensions_assembly: ExtensionsAssembly,
     ) -> None:
         self.registry: PidRegistry = registry
         self.logger: ValidationLogger = logger
-        self.assembly: ExtensionsAssembly = assembly
+        self.profiles_assembly: ProfilesAssembly = profiles_assembly
+        self.extensions_assembly: ExtensionsAssembly = extensions_assembly
 
     def validate(self, record: PidRecord) -> ValidationResult:
         """
@@ -54,53 +65,41 @@ class ProfileValidator:
             ValidationResult with errors/warnings
         """
         result: ValidationResult = ValidationResult()
+        profiles_info: ProfilesInfo = self.profiles_assembly.assemble_record(record)
 
-        profile_refs: List[Any] = record.get_values("0.FDO/Profile")
-        if not profile_refs:
-            self.logger.log_step(
-                "Profile Validation",
-                f"⚠ No profile references found in {record.pid}",
-                indent=0,
-            )
-            result.add_warning(f"No 0.FDO/Profile attribute in {record.pid}")
+        for error in profiles_info.process_warnings:
+            if isinstance(error, ZeroProfilesContained):
+                result.add_error(error)
+            else:
+                result.add_warning(error)
+
+        if not result.valid:
             return result
 
         self.logger.log_step(
             "Profile Validation",
-            f"Checking {len(profile_refs)} profile reference(s)",
+            f"Checking {len(profiles_info.profiles)} profile(s)",
             indent=0,
         )
 
-        for profile_ref in profile_refs:
-            if not self._is_pid_reference(profile_ref):
-                self.logger.log_step(
-                    "Profile Validation",
-                    f"⊘ Skipping non-PID value: {profile_ref}",
-                    indent=1,
-                )
-                continue
-
+        for profile in profiles_info.profiles:
             self.logger.log_step(
                 "Profile Validation",
-                f"→ Validating against profile {profile_ref}",
+                f"→ Validating against profile {profile.pid}",
                 indent=1,
             )
-
-            assembled: ExtensionsInfo = self.assembly.assemble(profile_ref)
             result.profiles_checked += 1
 
-            if assembled.has_cycle:
+            if profile.has_cycle:
                 self.logger.log_step(
                     "Cycle Detection",
                     "⚠ Cycle detected in profile chain",
                     indent=2,
                 )
-                result.add_warning(
-                    f"Profile {profile_ref} has circular extension chain"
-                )
+                # we added the warnings already above
 
             # VALIDATION: Check required attributes
-            required_attrs: List[str] = self._get_required_attributes(assembled)
+            required_attrs: List[str] = self._get_required_attributes(profile)
             self.logger.log_step(
                 "Required Attributes",
                 f"Checking {len(required_attrs)} required attribute(s)",
@@ -111,10 +110,14 @@ class ProfileValidator:
                 if not record.has_attribute(attr_name):
                     error_msg: str = (
                         f"Missing required attribute '{attr_name}' "
-                        f"(declared by {profile_ref})"
+                        f"(declared by {profile.pid})"
                     )
                     self.logger.log_step("Attribute Check", f"✗ {error_msg}", indent=3)
-                    result.add_error(error_msg)
+                    result.add_error(
+                        MissingRequiredAttribute(
+                            within_pid=record.pid, expected_attribute=attr_name
+                        )
+                    )
                 else:
                     self.logger.log_step(
                         "Attribute Check", f"✓ {attr_name} present", indent=3
@@ -248,17 +251,21 @@ class AttributeValidator:
             # VALIDATION: Check cardinality
             if rules.cardinality:
                 if not self._check_cardinality(
-                    len(values), rules.cardinality, attr_name, result
+                    len(values), rules.cardinality, attr_name, record_pid, result
                 ):
                     result.add_error(
-                        f"Cardinality violation for {attr_name}: "
-                        f"expected {rules.cardinality}, got {len(values)}"
+                        CardinalityViolation(
+                            pid=record_pid,
+                            attribute=attr_name,
+                            rule=rules.cardinality,
+                            actual_count=len(values),
+                        )
                     )
 
             # VALIDATION: Check each value against syntax rules
             for value in values:
                 value_result: ValidationResult = self._validate_value(
-                    value, rules, attr_name
+                    value, rules, attr_name, record_pid
                 )
                 result.merge(value_result)
 
@@ -271,6 +278,7 @@ class AttributeValidator:
         actual_count: int,
         cardinality_str: str,
         attr_name: str,
+        owning_record_pid: str,
         result: ValidationResult,
     ) -> bool:
         """
@@ -287,6 +295,7 @@ class AttributeValidator:
             actual_count: Number of values present
             cardinality_str: Cardinality expression
             attr_name: Name of the attribute (for error messages)
+            owning_record_pid: PID of the record using this attribute
             result: ValidationResult to add errors to
 
         Returns:
@@ -312,8 +321,12 @@ class AttributeValidator:
                     indent=2,
                 )
                 result.add_error(
-                    f"Cardinality violation for {attr_name}: "
-                    f"expected at least {min_count}, got {actual_count}"
+                    CardinalityViolation(
+                        pid=owning_record_pid,
+                        attribute=attr_name,
+                        rule=cardinality_str,
+                        actual_count=actual_count,
+                    )
                 )
                 return False
 
@@ -324,8 +337,12 @@ class AttributeValidator:
                     indent=2,
                 )
                 result.add_error(
-                    f"Cardinality violation for {attr_name}: "
-                    f"expected at most {max_count}, got {actual_count}"
+                    CardinalityViolation(
+                        pid=owning_record_pid,
+                        attribute=attr_name,
+                        rule=cardinality_str,
+                        actual_count=actual_count,
+                    )
                 )
                 return False
 
@@ -346,7 +363,7 @@ class AttributeValidator:
             return True
 
     def _validate_value(
-        self, value: Any, rules: ValidationRules, attr_name: str
+        self, value: Any, rules: ValidationRules, attr_name: str, owning_record_pid: str
     ) -> ValidationResult:
         """
         Validate a single value against assembled rules.
@@ -362,6 +379,7 @@ class AttributeValidator:
             value: The value to validate
             rules: Assembled validation rules
             attr_name: Name of the attribute (for error messages)
+            owning_record_pid: PID of the owning record (for error messages)
 
         Returns:
             ValidationResult with any errors found
@@ -376,7 +394,15 @@ class AttributeValidator:
                     f"{attr_name}: {value_str} is not {rules.primitive_type}"
                 )
                 self.logger.log_step("Type Check", f"✗ {error_msg}", indent=3)
-                result.add_error(error_msg)
+                result.add_error(
+                    ValueViolation(
+                        pid=owning_record_pid,
+                        attribute=attr_name,
+                        rule=rules.primitive_type,
+                        actual_value=str(value),
+                        detail_message=error_msg,
+                    )
+                )
             else:
                 self.logger.log_step(
                     "Type Check",
@@ -391,7 +417,15 @@ class AttributeValidator:
                     f"{attr_name}: {value_str} doesn't match pattern {rules.regex}"
                 )
                 self.logger.log_step("Regex Check", f"✗ {error_msg}", indent=3)
-                result.add_error(error_msg)
+                result.add_error(
+                    ValueViolation(
+                        pid=owning_record_pid,
+                        attribute=attr_name,
+                        rule=rules.regex,
+                        actual_value=str(value),
+                        detail_message=error_msg,
+                    )
+                )
             else:
                 self.logger.log_step(
                     "Regex Check", f"✓ {attr_name}: matches pattern", indent=3
@@ -405,7 +439,15 @@ class AttributeValidator:
                     f"[{rules.numeric_interval.get('min')}, {rules.numeric_interval.get('max')}]"
                 )
                 self.logger.log_step("Interval Check", f"✗ {error_msg}", indent=3)
-                result.add_error(error_msg)
+                result.add_error(
+                    ValueViolation(
+                        pid=owning_record_pid,
+                        attribute=attr_name,
+                        rule=str(rules.numeric_interval),
+                        actual_value=str(value),
+                        detail_message=error_msg,
+                    )
+                )
             else:
                 self.logger.log_step(
                     "Interval Check", f"✓ {attr_name}: within interval", indent=3
@@ -416,7 +458,15 @@ class AttributeValidator:
             if value not in rules.whitelist:
                 error_msg = f"{attr_name}: {value_str} not in whitelist"
                 self.logger.log_step("Whitelist Check", f"✗ {error_msg}", indent=3)
-                result.add_error(error_msg)
+                result.add_error(
+                    ValueViolation(
+                        pid=owning_record_pid,
+                        attribute=attr_name,
+                        rule=str(rules.whitelist),
+                        actual_value=str(value),
+                        detail_message=error_msg,
+                    )
+                )
             else:
                 self.logger.log_step(
                     "Whitelist Check", f"✓ {attr_name}: in whitelist", indent=3
@@ -427,7 +477,15 @@ class AttributeValidator:
             if value in rules.blacklist:
                 error_msg = f"{attr_name}: {value_str} in blacklist"
                 self.logger.log_step("Blacklist Check", f"✗ {error_msg}", indent=3)
-                result.add_error(error_msg)
+                result.add_error(
+                    ValueViolation(
+                        pid=owning_record_pid,
+                        attribute=attr_name,
+                        rule=str(rules.blacklist),
+                        actual_value=str(value),
+                        detail_message=error_msg,
+                    )
+                )
             else:
                 self.logger.log_step(
                     "Blacklist Check", f"✓ {attr_name}: not in blacklist", indent=3

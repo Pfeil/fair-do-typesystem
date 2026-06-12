@@ -39,6 +39,82 @@ class UnresolvablePid:
     """Error class that represents a profile that failed to resolve (e.g. is not defined)."""
 
     pid: str
+    cause: Optional[str] = None
+
+    def message(self) -> str:
+        return f"Failed to resolve profile for PID: {self.pid}. {self.cause if self.cause else ''}"
+
+
+@dataclass
+class ZeroProfilesContained:
+    """Error class that represents a record with zero profiles."""
+
+    pid_without_profiles: str
+
+    def message(self) -> str:
+        return f"No 0.FDO/Profile attribute in {self.pid_without_profiles}"
+
+
+@dataclass
+class CycleDetected:
+    """
+    Error class that represents a cycle detected in a record
+    when following the chain of a certain attribute.
+    """
+
+    pid: str
+    attribute: str
+
+    def message(self) -> str:
+        return f"Cycle detected in {self.attribute} chain of: {self.pid}"
+
+
+@dataclass
+class MissingRequiredAttribute:
+    """Error class that represents a missing required attribute in a record."""
+
+    within_pid: str
+    expected_attribute: str
+
+    def message(self) -> str:
+        return f"Missing required attribute {self.expected_attribute} in: {self.within_pid}"
+
+
+@dataclass
+class CardinalityViolation:
+    """Error class that represents a cardinality violation in a record."""
+
+    pid: str
+    attribute: str
+    rule: str
+    actual_count: int
+
+    def message(self) -> str:
+        return f"Cardinality violation in {self.attribute} of: {self.pid}. Expected {self.rule}, got {self.actual_count}"
+
+
+@dataclass
+class ValueViolation:
+    """Error class that represents a value violation in an attribute's value."""
+
+    pid: str
+    attribute: str
+    rule: str
+    actual_value: str
+    detail_message: str
+
+    def message(self) -> str:
+        return f"Value violation in {self.attribute} of {self.pid}. {self.detail_message} The value {self.actual_value} does not fit rule: {self.rule}."
+
+
+RecordProcessingError = (
+    UnresolvablePid
+    | ZeroProfilesContained
+    | CycleDetected
+    | MissingRequiredAttribute
+    | CardinalityViolation
+    | ValueViolation
+)
 
 
 @dataclass
@@ -62,7 +138,7 @@ class ExtensionsInfo:
     # Indicates if cycles occurred in the profile chain.
     has_cycle: bool = False
     # Warnings that occurred during the collection of information in this class.
-    processing_warnings: List[UnresolvablePid] = field(default_factory=list)
+    processing_warnings: List[RecordProcessingError] = field(default_factory=list)
 
 
 @dataclass
@@ -76,7 +152,7 @@ class ProfilesInfo:
     # Assembled profiles for this record. Can be used for validation.
     profiles: List[ExtensionsInfo] = field(default_factory=list)
     # Warnings that occurred during the collection of information in this class.
-    process_warnings: List[UnresolvablePid] = field(default_factory=list)
+    process_warnings: List[RecordProcessingError] = field(default_factory=list)
 
 
 @dataclass
@@ -105,20 +181,20 @@ class ValidationResult:
     """
 
     valid: bool = True
-    errors: List[str] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
+    errors: List[RecordProcessingError] = field(default_factory=list)
+    warnings: List[RecordProcessingError] = field(default_factory=list)
     profiles_checked: int = 0
     attributes_checked: int = 0
     resolutions_performed: int = 0
     # Additional attributes are such attributes that are not required by the given profiles.
     additional_attributes: List[str] = field(default_factory=list)
 
-    def add_error(self, message: str) -> None:
+    def add_error(self, message: RecordProcessingError) -> None:
         """Add an error and mark result as invalid."""
         self.errors.append(message)
         self.valid = False
 
-    def add_warning(self, message: str) -> None:
+    def add_warning(self, message: RecordProcessingError) -> None:
         """Add a warning (doesn't affect validity)."""
         self.warnings.append(message)
 

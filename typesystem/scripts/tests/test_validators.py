@@ -8,6 +8,9 @@ Tests are organized into classes:
 
 import pytest
 
+from assembly import ProfilesAssembly
+from models import MissingRequiredAttribute, ZeroProfilesContained
+
 try:
     from assembly import AttributeAssembly, ExtensionsAssembly
     from models import PidRecord, ValidationResult
@@ -38,8 +41,17 @@ def registry(logger: ValidationLogger) -> PidRegistry:
 
 
 @pytest.fixture
-def assembly(registry: PidRegistry, logger: ValidationLogger) -> ExtensionsAssembly:
+def extensions_assembly(
+    registry: PidRegistry, logger: ValidationLogger
+) -> ExtensionsAssembly:
     return ExtensionsAssembly(registry, logger)
+
+
+@pytest.fixture
+def profiles_assembly(
+    registry: PidRegistry, logger: ValidationLogger
+) -> ProfilesAssembly:
+    return ProfilesAssembly(registry, logger)
 
 
 @pytest.fixture
@@ -51,9 +63,12 @@ def attribute_assembly(
 
 @pytest.fixture
 def validator(
-    registry: PidRegistry, logger: ValidationLogger, assembly: ExtensionsAssembly
+    registry: PidRegistry,
+    logger: ValidationLogger,
+    profiles_assembly: ProfilesAssembly,
+    extensions_assembly: ExtensionsAssembly,
 ) -> ProfileValidator:
-    return ProfileValidator(registry, logger, assembly)
+    return ProfileValidator(registry, logger, profiles_assembly, extensions_assembly)
 
 
 @pytest.fixture
@@ -111,7 +126,6 @@ class TestProfileValidator:
         self,
         validator: ProfileValidator,
         minimal_record: PidRecord,
-        logger: ValidationLogger,
     ):
         """Test validating a minimal record against Root profile."""
         result = validator.validate(minimal_record)
@@ -125,7 +139,6 @@ class TestProfileValidator:
         self,
         validator: ProfileValidator,
         complete_profile_def_record: PidRecord,
-        logger: ValidationLogger,
     ):
         """Test validating ProfileDef against itself."""
         result = validator.validate(complete_profile_def_record)
@@ -139,8 +152,6 @@ class TestProfileValidator:
     def test_validate_missing_required_attribute(
         self,
         validator: ProfileValidator,
-        logger: ValidationLogger,
-        assembly: ExtensionsAssembly,
     ):
         """Test that missing required attributes are detected."""
         # Create a record missing 0.FDO/Data
@@ -158,12 +169,11 @@ class TestProfileValidator:
 
         assert result.valid is False
         assert len(result.errors) == 1
-        assert "Missing required attribute '0.FDO/Data'" in result.errors[0]
+        assert isinstance(result.errors[0], MissingRequiredAttribute)
 
     def test_validate_no_profile_reference(
         self,
         validator: ProfileValidator,
-        logger: ValidationLogger,
     ):
         """Test validation when record has no profile reference."""
         no_profile_record = PidRecord(
@@ -177,15 +187,13 @@ class TestProfileValidator:
 
         result = validator.validate(no_profile_record)
 
-        assert result.valid is True  # Warning, not error
-        assert len(result.warnings) == 1
-        assert "No 0.FDO/Profile attribute" in result.warnings[0]
-        assert len(result.errors) == 0
+        assert result.valid is False
+        assert len(result.errors) == 1
+        assert isinstance(result.errors[0], ZeroProfilesContained)
 
     def test_validate_non_pid_profile_value(
         self,
         validator: ProfileValidator,
-        logger: ValidationLogger,
     ):
         """Test that non-PID profile values are skipped."""
         literal_profile_record = PidRecord(
@@ -207,8 +215,6 @@ class TestProfileValidator:
     def test_validate_multiple_profiles(
         self,
         validator: ProfileValidator,
-        logger: ValidationLogger,
-        assembly: ExtensionsAssembly,
     ):
         """Test validation against multiple profile references."""
         multi_profile_record = PidRecord(
@@ -227,22 +233,9 @@ class TestProfileValidator:
 
         assert result.profiles_checked >= 1
 
-    def test_validate_with_cycle_warning(
-        self,
-        validator: ProfileValidator,
-        logger: ValidationLogger,
-        assembly: ExtensionsAssembly,
-    ):
-        """Test that cycles in profile chain generate warnings."""
-        # This would require creating a cycle in test data
-        # For now, just verify the mechanism exists
-        pass
-
     def test_validation_result_tracks_resolutions(
         self,
         validator: ProfileValidator,
-        logger: ValidationLogger,
-        assembly: ExtensionsAssembly,
         complete_profile_def_record: PidRecord,
     ):
         """Test that validation result tracks number of resolutions."""
@@ -254,7 +247,6 @@ class TestProfileValidator:
     def test_validation_result_aggregates_errors(
         self,
         validator: ProfileValidator,
-        logger: ValidationLogger,
     ):
         """Test that multiple errors are aggregated."""
         # Create a record missing multiple required attributes
@@ -284,10 +276,10 @@ class TestProfileValidator:
     def test_get_required_attributes_uses_declared_only(
         self,
         validator: ProfileValidator,
-        assembly: ExtensionsAssembly,
+        extensions_assembly: ExtensionsAssembly,
     ):
         """Test that only declared attributes are required, not inherited."""
-        assembled = assembly.assemble("0.FDO/Root")
+        assembled = extensions_assembly.assemble("0.FDO/Root")
         required = validator._get_required_attributes(assembled)
 
         # Root declares 3 attributes
@@ -305,9 +297,7 @@ class TestProfileValidator:
 class TestProfileValidatorIntegration:
     """Test ProfileValidator with actual type system profiles."""
 
-    def test_validate_root_profile(
-        self, validator: ProfileValidator, logger: ValidationLogger
-    ):
+    def test_validate_root_profile(self, validator: ProfileValidator):
         """Test validating the Root profile record."""
         root_record = validator.registry.resolve_pid("0.FDO/Root")
         assert root_record is not None
@@ -320,9 +310,7 @@ class TestProfileValidatorIntegration:
         assert len(result.additional_attributes) == 0
         assert result.profiles_checked == 1
 
-    def test_validate_profiledef_profile(
-        self, validator: ProfileValidator, logger: ValidationLogger
-    ):
+    def test_validate_profiledef_profile(self, validator: ProfileValidator):
         """Test validating the ProfileDef profile record."""
         profiledef_record = validator.registry.resolve_pid("0.FDO/ProfileDef")
         assert profiledef_record is not None
@@ -356,7 +344,6 @@ class TestProfileValidatorIntegration:
         self,
         validator: ProfileValidator,
         logger: ValidationLogger,
-        assembly: ExtensionsAssembly,
         capsys: pytest.CaptureFixture,
     ):
         """Test validation with profiles that extend other profiles."""
