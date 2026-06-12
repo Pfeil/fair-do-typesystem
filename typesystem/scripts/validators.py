@@ -126,6 +126,15 @@ class ProfileValidator:
                     )
 
             result.attributes_checked += len(required_attrs)
+            result.additional_attributes = [
+                attr for attr in record.data.keys() if attr not in required_attrs
+            ]
+            if len(result.additional_attributes) > 0:
+                self.logger.log_step(
+                    "Attribute Check",
+                    f"✓ Additional attributes: {', '.join(result.additional_attributes)}",
+                    indent=3,
+                )
 
         return result
 

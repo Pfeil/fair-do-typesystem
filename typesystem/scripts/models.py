@@ -110,6 +110,8 @@ class ValidationResult:
     profiles_checked: int = 0
     attributes_checked: int = 0
     resolutions_performed: int = 0
+    # Additional attributes are such attributes that are not required by the given profiles.
+    additional_attributes: List[str] = field(default_factory=list)
 
     def add_error(self, message: str) -> None:
         """Add an error and mark result as invalid."""
