@@ -636,6 +636,38 @@ class TestWhitelistBlacklistValidation:
         )
         assert result.valid is True
 
+    def test_blacklist_rules_over_whitelist(
+        self, attribute_validator: AttributeValidator
+    ):
+        """Test whitelist vs blacklist validation."""
+        rules = ValidationRules(
+            whitelist=["apple", "banana", "fruit"],
+            blacklist=["orange", "grape", "fruit"],
+        )
+
+        # Whitelisted, not blacklisted -> works
+        result = attribute_validator._validate_value(
+            "apple", rules, "field", "owning_record_pid"
+        )
+        assert result.valid is True
+        assert len(result.errors) == 0
+
+        # Not whitelisted, blacklisted -> fails
+        result = attribute_validator._validate_value(
+            "orange", rules, "field", "owning_record_pid"
+        )
+        assert result.valid is False
+        # not in whitelist, and in blacklist -> 2 errors
+        assert len(result.errors) == 2
+
+        # In Whitelist and in blacklist -> fails (blacklist rules)
+        result = attribute_validator._validate_value(
+            "fruit", rules, "field", "owning_record_pid"
+        )
+        assert result.valid is False
+        # Whitelist check is ok, blacklist check fails
+        assert len(result.errors) == 1
+
 
 # =============================================================================
 # TestIntegration - Integration tests with real type system
