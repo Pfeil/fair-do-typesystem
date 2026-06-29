@@ -24,7 +24,7 @@
     "Whitelist"
   ],
   "0.FDO/DataType": [
-    "syntax/custom/PrimitiveDataTypeSyntax.json"
+    "PrimitiveDataTypeSyntax"
   ],
   "0.FDO/Cardinality": [
     "1"
