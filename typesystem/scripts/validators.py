@@ -544,8 +544,8 @@ class AttributeValidator:
             # Some edge cases might differ, but this works for most patterns
             return bool(re.fullmatch(pattern, value))
         except re.error:
-            # Invalid regex, be permissive
-            return True
+            # Invalid regex
+            return False
 
     def _check_numeric_interval(self, value: float, interval: Dict[str, Any]) -> bool:
         """

@@ -525,15 +525,15 @@ class TestRegexValidation:
         pattern = r"^(\d+)(\.\.(\d+|\*))?$"
 
         assert attribute_validator._check_regex("1", pattern) is True
+        assert attribute_validator._check_regex("01..01", pattern) is True
         assert attribute_validator._check_regex("0..1", pattern) is True
         assert attribute_validator._check_regex("1..*", pattern) is True
         assert attribute_validator._check_regex("2..3", pattern) is True
         assert attribute_validator._check_regex("abc", pattern) is False
 
     def test_check_regex_invalid_pattern(self, attribute_validator: AttributeValidator):
-        """Test regex with invalid pattern (should be permissive)."""
-        # Invalid regex should not crash
-        assert attribute_validator._check_regex("anything", "[invalid") is True
+        """Test regex with invalid pattern."""
+        assert attribute_validator._check_regex("anything", "[invalid") is False
 
 
 # =============================================================================
