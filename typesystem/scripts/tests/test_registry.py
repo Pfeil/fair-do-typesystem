@@ -2,8 +2,6 @@
 
 from pathlib import Path
 
-import pytest
-
 from registry import PidRegistry
 from validation_logger import ValidationLogger
 
@@ -15,20 +13,34 @@ class TestPidRegistry:
         """Test that registry.json is loaded on initialization."""
         logger = ValidationLogger(verbose=False)
         registry = PidRegistry(logger)
+        pids = registry.get_all_pids()
 
-        assert registry.registry is not None
-        assert len(registry.registry) > 0
+        assert len(pids) > 0, "No PIDs found in registry"
 
     def test_resolve_known_pid(self):
         """Test resolving a PID that exists in registry.json."""
         logger = ValidationLogger(verbose=False)
         registry = PidRegistry(logger)
+        known_pids = [
+            "0.FDO/Root",
+            "0.FDO/ProfileDef",
+            "0.FDO/Type",
+            "0.FDO/StringSyntax",
+            "CardinalitySyntax",
+            "0.FDO/CardinalitySyntax",
+            "Cardinality/Syntax",
+            "0-FDO/Cardinality/Syntax",
+        ]
 
-        record = registry.resolve_pid("0.FDO/Root")
-
-        assert record is not None
-        assert record.pid == "0.FDO/Root"
-        assert record.has_attribute("0.FDO/Type")
+        for pid in known_pids:
+            record = registry.resolve_pid(pid)
+            assert record is not None, f"Failed to resolve PID: {pid}"
+            assert record.pid == pid, (
+                f"Resolved PID does not match: expected {pid}, got {record.pid}"
+            )
+            assert record.has_attribute("0.FDO/Type"), (
+                f"PID {pid} does not have attribute '0.FDO/Type'"
+            )
 
     def test_resolve_returns_pid_record(self):
         """Test that resolve_pid returns a PidRecord with correct structure."""
@@ -37,6 +49,7 @@ class TestPidRegistry:
 
         record = registry.resolve_pid("0.FDO/ProfileDef")
 
+        assert record
         assert record.pid == "0.FDO/ProfileDef"
         assert record.source_pid == "0.FDO/ProfileDef"
         assert isinstance(record.data, dict)
@@ -78,10 +91,10 @@ class TestPidRegistry:
         registry = PidRegistry(logger)
 
         # Check for essential PIDs
-        assert "0.FDO/Root" in registry.registry
-        assert "0.FDO/ProfileDef" in registry.registry
-        assert "0.FDO/AttributeDef" in registry.registry
-        assert "0.FDO/SyntaxDef" in registry.registry
+        assert registry.resolve_pid("0.FDO/Root") is not None
+        assert registry.resolve_pid("0.FDO/ProfileDef") is not None
+        assert registry.resolve_pid("0.FDO/AttributeDef") is not None
+        assert registry.resolve_pid("0.FDO/SyntaxDef") is not None
 
     def test_multiple_resolutions_same_pid(self):
         """Test that multiple resolutions of same PID work (no caching)."""

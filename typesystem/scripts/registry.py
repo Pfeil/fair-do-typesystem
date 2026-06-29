@@ -38,17 +38,6 @@ class PidRegistry:
     def __init__(self, logger: ValidationLogger) -> None:
         self.logger: ValidationLogger = logger
         self.base_path: Path = Path(__file__).parent.parent
-        self.registry: Dict[str, str] = self._load_registry()
-
-    def _load_registry(self) -> Dict[str, str]:
-        """Load the registry.json file that maps PIDs to file paths."""
-        registry_path: Path = self.base_path / "registry.json"
-        if not registry_path.exists():
-            raise FileNotFoundError(f"registry.json not found at {registry_path}")
-
-        with open(registry_path) as f:
-            data: Dict[str, object] = json.load(f)
-            return data.get("entries", {})
 
     def resolve_pid(self, pid: str) -> Optional[PidRecord]:
         """
@@ -58,37 +47,68 @@ class PidRegistry:
         Logs resolution attempt and outcome.
 
         Resolution strategy:
-        1. Check registry.json for known PID
-        2. Try as relative path from base_path
-        3. Try common variations (prefixes, suffixes)
-
-        Args:
-            pid: The PID to resolve (e.g., "0.FDO/ProfileDef")
-
-        Returns:
-            PidRecord if successful, None otherwise
+        Appends .json, then tries common filename variations,
+        like replacing slashes with underscores/dashes.
+        For these filename_candidates, find all files
+        recursively and return the first match.
         """
-        # Strategy 1: Check registry.json
-        if pid in self.registry:
-            file_path: Path = self.base_path / self.registry[pid]
-            if file_path.exists():
-                return self._load_record_from_file(pid, file_path)
+        import re
 
-        # Strategy 2: Try as relative path
-        direct_path: Path = self.base_path / pid
-        if direct_path.exists():
-            return self._load_record_from_file(pid, direct_path)
+        pid_json = f"{pid}.json"
+        pid_json_without_spec_prefix = re.sub(r"^0.FDO.", "", pid_json)
 
-        # Strategy 3: Try common variations
-        for suffix in [".json", ""]:
-            for prefix in ["", "core/", "attributes/", "syntax/", "examples/"]:
-                test_path: Path = self.base_path / f"{prefix}{pid}{suffix}"
-                if test_path.exists():
-                    return self._load_record_from_file(pid, test_path)
+        def slash_replacements(pid: str):
+            return [
+                pid,
+                pid.replace("/", "_"),
+                pid.replace("/", "-"),
+                pid.replace("/", ""),
+                pid.replace("/", " "),
+            ]
 
+        possible_filenames = set(
+            slash_replacements(pid_json)
+            + slash_replacements(pid_json_without_spec_prefix)
+        )
+
+        # find any of these in base_path
+        candidates = set()
+        for filename in possible_filenames:
+            for file_path in self.base_path.rglob(filename):
+                candidates.add(file_path)
+
+        if len(candidates) > 1:
+            self.logger.log_resolution(pid, success=False)
+            self.logger.log_step(
+                "Multiple candidates found", f"{len(candidates)} candidates"
+            )
+            return None
+
+        if len(candidates) == 0:
+            self.logger.log_resolution(pid, success=False)
+            self.logger.log_step(
+                "No candidates found",
+                f"None of the {len(possible_filenames)} possible filenames exist: {possible_filenames}",
+            )
+            return None
+
+        return self._load_record_from_file(pid, file_path)
         # Resolution failed
         self.logger.log_resolution(pid, success=False)
         return None
+
+    def get_all_pids(self) -> set[str]:
+        """Return all PIDs known to the registry."""
+        pids = set()
+        for file_path in self.base_path.rglob("*.json"):
+            try:
+                with open(file_path) as f:
+                    data: Dict[str, Any] = json.load(f)
+                    if any(key.startswith("0.FDO") for key in data.keys()):
+                        pids.add(str(file_path.relative_to(self.base_path)))
+            except (json.JSONDecodeError, IOError):
+                continue
+        return pids
 
     def _load_record_from_file(self, pid: str, file_path: Path) -> Optional[PidRecord]:
         """Load a JSON file and wrap it as a PidRecord."""

@@ -25,7 +25,7 @@ from validators import AttributeValidator
 @pytest.fixture
 def logger() -> ValidationLogger:
     """Create a ValidationLogger for testing."""
-    return ValidationLogger(verbose=False)
+    return ValidationLogger(verbose=True)
 
 
 @pytest.fixture
