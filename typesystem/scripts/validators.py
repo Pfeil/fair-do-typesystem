@@ -246,6 +246,8 @@ class AttributeValidator:
 
             # ASSEMBLY: Get validation rules for this attribute
             rules: ValidationRules = self.assembly.assemble_rules(attr_name)
+            # TODO as long as the validation rules do not collect resolutions
+            # during assembly, we do not really know how much to add here.
             result.resolutions_performed += 1
 
             # VALIDATION: Check cardinality
@@ -359,8 +361,18 @@ class AttributeValidator:
                 f"⚠ {attr_name}: invalid cardinality expression '{cardinality_str}'",
                 indent=2,
             )
-            # Don't fail validation for invalid cardinality expressions
-            return True
+            # TODO we should actually assemble cardinalitysyntax in this function and use as much as we can
+            # to figure out the usefulness of the granularity and see if we can improve on the record design.
+            result.add_error(
+                ValueViolation(
+                    actual_value=cardinality_str,
+                    attribute=attr_name,
+                    pid=owning_record_pid,
+                    rule="Cardinality Syntax",
+                    detail_message="Does not match cardinality syntax (int | int..int).",
+                )
+            )
+            return False
 
     def _validate_value(
         self, value: Any, rules: ValidationRules, attr_name: str, owning_record_pid: str
