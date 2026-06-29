@@ -8,14 +8,8 @@ import json
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-try:
-    # When imported as a package
-    from .models import PidRecord
-    from .validation_logger import ValidationLogger
-except ImportError:
-    # When run directly
-    from models import PidRecord
-    from validation_logger import ValidationLogger
+from models import PidRecord
+from validation_logger import ValidationLogger
 
 
 class PidRegistry:
@@ -105,7 +99,7 @@ class PidRegistry:
                 with open(file_path) as f:
                     data: Dict[str, Any] = json.load(f)
                     if any(key.startswith("0.FDO") for key in data.keys()):
-                        pids.add(str(file_path.relative_to(self.base_path)))
+                        pids.add(str(file_path.name.replace(".json", "")))
             except (json.JSONDecodeError, IOError):
                 continue
         return pids
