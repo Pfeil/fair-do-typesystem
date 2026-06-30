@@ -21,7 +21,7 @@
     }
   ],
   "0.FDO/ValidationMechanism": [
-    "Whitelist"
+    "Syntax"
   ],
   "0.FDO/DataType": [
     "PrimitiveDataTypeSyntax"
