@@ -320,8 +320,8 @@ class TestProfileValidatorIntegration:
         assert result.valid is True
         assert len(result.errors) == 0
         assert len(result.warnings) == 0
-        assert len(result.additional_attributes) == 0
-        assert result.profiles_checked == 1
+        assert len(result.additional_attributes) == 1  # 0.FDO/Extends
+        assert result.profiles_checked == 2  # ProfileDef (self) and Root
 
     def test_validation_shows_detailed_logging(
         self,

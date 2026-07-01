@@ -32,9 +32,9 @@ class TestExtensionsAssembly:
         """Test assembling the profile definition."""
         result = assembly.assemble("0.FDO/ProfileDef")
 
-        assert len(result.extends_chain) == 1
+        assert len(result.extends_chain) == 2  # self -> extends root -> end
         assert result.pid == "0.FDO/ProfileDef"
-        assert result.amount_resolved_extension_pids == 1
+        assert result.amount_resolved_extension_pids == len(result.extends_chain)
         assert len(result.all_attributes) == 6
         assert "0.FDO/Type" in result.all_attributes
         assert "0.FDO/Profile" in result.all_attributes
@@ -43,9 +43,9 @@ class TestExtensionsAssembly:
     def test_assemble_extended_profile(self, assembly: ExtensionsAssembly):
         result = assembly.assemble("extending-profile")
 
-        assert len(result.extends_chain) == 2
+        assert len(result.extends_chain) == 3  # self -> ProfileDef -> Root
         assert result.pid == "extending-profile"
-        assert result.amount_resolved_extension_pids == 2
+        assert result.amount_resolved_extension_pids == len(result.extends_chain)
         assert len(result.all_attributes) == 7
         assert "0.FDO/Type" in result.all_attributes
         assert "0.FDO/Profile" in result.all_attributes
@@ -60,8 +60,9 @@ class TestExtensionsAssembly:
         assert result.pid in result.extends_chain, (
             f"PID {result.pid} should be in extends chain"
         )
-        assert result.amount_resolved_extension_pids == 4, (
-            f"Expected 3+1 extensions, got {result.amount_resolved_extension_pids}"
+        # has 3 profiles, one is valid and not self, extending ProfileDef, which extends Root
+        assert result.amount_resolved_extension_pids == 3 + 1 + 1, (
+            f"Expected 3+1+1 extensions, got {result.amount_resolved_extension_pids}"
         )
         assert len(result.all_attributes) == 8, (
             f"Expected 8 attributes: one from itself, and 1+6 from the extensions. Got {len(result.all_attributes)}"
