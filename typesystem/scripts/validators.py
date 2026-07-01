@@ -8,6 +8,7 @@ to assembly components.
 """
 
 import re
+from itertools import chain
 from typing import Any, Dict, List, Optional, Set
 
 from assembly import ProfilesAssembly
@@ -78,61 +79,80 @@ class ProfileValidator:
 
         self.logger.log_step(
             "Profile Validation",
-            f"Checking {len(profiles_info.profiles)} profile(s)",
+            f"Record {record.pid} has {len(profiles_info.profiles)} profile(s)",
             indent=0,
         )
 
+        # log which profile requires which attributes
         for profile in profiles_info.profiles:
             self.logger.log_step(
                 "Profile Validation",
-                f"→ Validating against profile {profile.pid}",
+                f"→ Profile {profile.pid} requires attributes: {', '.join(self._get_required_attributes(profile))}",
                 indent=1,
             )
-            result.profiles_checked += 1
 
+        required_attributes: set[str] = set(
+            chain.from_iterable(
+                [
+                    self._get_required_attributes(profile)
+                    for profile in profiles_info.profiles
+                ]
+            )
+        )
+
+        self.logger.log_step(
+            "Required Attributes",
+            f"Checking {len(required_attributes)} required attribute(s)",
+            indent=2,
+        )
+
+        for attr_name in required_attributes:
+            if (
+                not record.has_attribute(attr_name)
+                or len(record.get_values(attr_name)) == 0
+            ):
+                profiles_declaring_attribute = set(
+                    [
+                        profile.pid
+                        for profile in profiles_info.profiles
+                        if attr_name in self._get_required_attributes(profile)
+                    ]
+                )
+                error_msg: str = (
+                    f"Missing required attribute '{attr_name}' "
+                    f"(declared by {', '.join(profiles_declaring_attribute)})"
+                )
+                self.logger.log_step("Attribute Check", f"✗ {error_msg}", indent=3)
+                result.add_error(
+                    MissingRequiredAttribute(
+                        within_pid=record.pid, expected_attribute=attr_name
+                    )
+                )
+            else:
+                self.logger.log_step(
+                    "Attribute Check", f"✓ {attr_name} present", indent=3
+                )
+
+        result.profiles_checked += len(profiles_info.profiles)
+        result.attributes_checked += len(required_attributes)
+        result.additional_attributes = [
+            attr for attr in record.data.keys() if attr not in required_attributes
+        ]
+        if len(result.additional_attributes) > 0:
+            self.logger.log_step(
+                "Attribute Check",
+                f"✓ Additional attributes: {', '.join(result.additional_attributes)}",
+                indent=3,
+            )
+
+        for profile in profiles_info.profiles:
             if profile.has_cycle:
                 self.logger.log_step(
                     "Cycle Detection",
-                    "⚠ Cycle detected in profile chain",
+                    f"⚠ Cycle detected in profile chain of {profile.pid}",
                     indent=2,
                 )
                 # we added the warnings already above
-
-            # VALIDATION: Check required attributes
-            required_attrs: List[str] = self._get_required_attributes(profile)
-            self.logger.log_step(
-                "Required Attributes",
-                f"Checking {len(required_attrs)} required attribute(s)",
-                indent=2,
-            )
-
-            for attr_name in required_attrs:
-                if not record.has_attribute(attr_name):
-                    error_msg: str = (
-                        f"Missing required attribute '{attr_name}' "
-                        f"(declared by {profile.pid})"
-                    )
-                    self.logger.log_step("Attribute Check", f"✗ {error_msg}", indent=3)
-                    result.add_error(
-                        MissingRequiredAttribute(
-                            within_pid=record.pid, expected_attribute=attr_name
-                        )
-                    )
-                else:
-                    self.logger.log_step(
-                        "Attribute Check", f"✓ {attr_name} present", indent=3
-                    )
-
-            result.attributes_checked += len(required_attrs)
-            result.additional_attributes = [
-                attr for attr in record.data.keys() if attr not in required_attrs
-            ]
-            if len(result.additional_attributes) > 0:
-                self.logger.log_step(
-                    "Attribute Check",
-                    f"✓ Additional attributes: {', '.join(result.additional_attributes)}",
-                    indent=3,
-                )
 
         return result
 

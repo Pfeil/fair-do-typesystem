@@ -21,7 +21,8 @@
     }
   ],
   "0.FDO/ValidationMechanism": [
-    "Syntax"
+    "Syntax",
+    "AttributeReference"
   ],
   "0.FDO/DataType": [
     "0.FDO/StringSyntax"
