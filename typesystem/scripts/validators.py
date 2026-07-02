@@ -16,6 +16,7 @@ from models import (
     CardinalityViolation,
     MissingRequiredAttribute,
     ProfilesInfo,
+    UnresolvablePid,
     ValueViolation,
     ZeroProfilesContained,
 )
@@ -229,6 +230,10 @@ class AttributeValidator:
         self.registry: PidRegistry = registry
         self.logger: ValidationLogger = logger
         self.assembly: AttributeAssembly = assembly
+        # Ensure consistent behavior by caching (but not hard coding) relevant structures
+        self.mechanism_rules: ValidationRules = self.assembly.assemble_rules(
+            "0.FDO/ValidationMechanism"
+        )
 
     def validate(self, record: PidRecord, record_pid: str) -> ValidationResult:
         """
@@ -257,42 +262,107 @@ class AttributeValidator:
         for attr_name, values in record.data.items():
             if not values:
                 continue
-
-            self.logger.log_step(
-                "Attribute Validation",
-                f"→ Validating {attr_name} ({len(values)} value(s))",
-                indent=1,
+            result.merge(
+                self._validate_attribute(attr_name, values, record_pid, record)
             )
 
-            # ASSEMBLY: Get validation rules for this attribute
-            rules: ValidationRules = self.assembly.assemble_rules(attr_name)
-            # TODO as long as the validation rules do not collect resolutions
-            # during assembly, we do not really know how much to add here.
-            result.resolutions_performed += 1
+        return result
 
-            # VALIDATION: Check cardinality
-            if rules.cardinality:
-                if not self._check_cardinality(
-                    len(values), rules.cardinality, attr_name, record_pid, result
-                ):
-                    result.add_error(
-                        CardinalityViolation(
-                            pid=record_pid,
-                            attribute=attr_name,
-                            rule=rules.cardinality,
-                            actual_count=len(values),
-                        )
+    def _validate_attribute_by_rules(
+        self,
+        attr_name: str,
+        attribute_rules: ValidationRules,
+        values: list[Any],
+        record_pid: str,
+        record: PidRecord | None,
+    ) -> ValidationResult:
+        result = ValidationResult()
+
+        self.logger.log_step(
+            "Attribute Validation",
+            f"→ Validating {attr_name} ({len(values)} value(s))",
+            indent=1,
+        )
+
+        # VALIDATION: Check cardinality
+        if attribute_rules.cardinality:
+            if not self._check_cardinality(
+                len(values), attribute_rules.cardinality, attr_name, record_pid, result
+            ):
+                result.add_error(
+                    CardinalityViolation(
+                        pid=record_pid,
+                        attribute=attr_name,
+                        rule=attribute_rules.cardinality,
+                        actual_count=len(values),
                     )
-
-            # VALIDATION: Check each value against syntax rules
-            for value in values:
-                value_result: ValidationResult = self._validate_value(
-                    value, rules, attr_name, record_pid
                 )
-                result.merge(value_result)
 
-            result.attributes_checked += 1
+        for mechanism in attribute_rules.validation_mechanisms:
+            is_valid_mechanism: ValidationResult = self._validate_value(
+                mechanism, self.mechanism_rules, "0.FDO/ValidationMechanism", record_pid
+            )
+            if not is_valid_mechanism.valid:
+                result.merge(is_valid_mechanism)
 
+            match mechanism:
+                case "Syntax":
+                    # VALIDATION: Check each value against syntax rules
+                    for value in values:
+                        value_result: ValidationResult = self._validate_value(
+                            value, attribute_rules, attr_name, record_pid
+                        )
+                        result.merge(value_result)
+                case "AttributeReference":
+                    if not record:
+                        record = self.registry.resolve_pid(record_pid)
+                        if not record:
+                            result.add_error(
+                                UnresolvablePid(
+                                    pid=record_pid,
+                                    cause="Failed to resolve attribute reference",
+                                )
+                            )
+                            continue
+                        result.resolutions_performed += 1
+                    for value in values:
+                        is_reference: bool = (
+                            record.has_attribute(value)
+                            and len(record.get_values(value)) > 0
+                        )
+                        if not is_reference:
+                            result.add_error(
+                                ValueViolation(
+                                    pid=record_pid,
+                                    attribute=attr_name,
+                                    actual_value=value,
+                                    rule="ValidationMechanism = AttributeReference",
+                                    detail_message="Reference not found",
+                                )
+                            )
+                case any:
+                    result.add_error(NotImplementedError())
+
+        result.attributes_checked += 1
+        return result
+
+    def _validate_attribute(
+        self,
+        attr_name: str,
+        values: list[Any],
+        record_pid: str,
+        record: PidRecord,
+    ) -> ValidationResult:
+        result = self._validate_attribute_by_rules(
+            attr_name,
+            self.assembly.assemble_rules(attr_name),
+            values,
+            record_pid,
+            record,
+        )
+        # TODO as long as the validation rules do not collect resolutions
+        # during assembly, we do not really know how much to add here.
+        result.resolutions_performed += 1
         return result
 
     def _check_cardinality(

@@ -310,7 +310,15 @@ class AttributeAssembly:
         rules: ValidationRules = ValidationRules(
             cardinality=cardinality,
             syntax_definition_pid=syntax_pid,
+            validation_mechanisms=attr_def.get_values("0.FDO/ValidationMechanism"),
         )
+
+        if rules.validation_mechanisms:
+            self.logger.log_step(
+                "Validation Mechanisms",
+                f"Found: {', '.join(rules.validation_mechanisms)}",
+                indent=2,
+            )
 
         # If syntax definition exists, extract its rules
         if syntax_pid:

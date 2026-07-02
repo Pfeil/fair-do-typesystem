@@ -114,6 +114,7 @@ RecordProcessingError = (
     | MissingRequiredAttribute
     | CardinalityViolation
     | ValueViolation
+    | NotImplementedError
 )
 
 
@@ -165,6 +166,7 @@ class ValidationRules:
 
     cardinality: Optional[str] = None
     primitive_type: Optional[str] = None
+    validation_mechanisms: List[str] = field(default_factory=list)
     regex: Optional[str] = None
     numeric_interval: Optional[Dict[str, Any]] = None
     whitelist: Optional[List[Any]] = None
