@@ -3,6 +3,7 @@
 from models import (
     ExtensionsInfo,
     PidRecord,
+    SyntaxRules,
     UnresolvablePid,
     ValidationResult,
     ValidationRules,
@@ -140,23 +141,22 @@ class TestValidationRules:
         rules = ValidationRules()
 
         assert rules.cardinality is None
-        assert rules.primitive_type is None
-        assert rules.regex is None
-        assert rules.numeric_interval is None
-        assert rules.whitelist is None
-        assert rules.blacklist is None
-        assert rules.syntax_definition_pid is None
+        assert rules.validation_mechanisms == []
+        assert rules.syntax_rules == []
+        assert rules.validation_result is not None
 
     def test_with_cardinality_and_type(self):
         """Test rules with cardinality and primitive type."""
-        rules = ValidationRules(cardinality="1..*", primitive_type="string")
+        syntax = SyntaxRules(syntax_pid="fake/pid", primitive_types=["string"])
+        rules = ValidationRules(cardinality="1..*", syntax_rules=[syntax])
 
         assert rules.cardinality == "1..*"
-        assert rules.primitive_type == "string"
+        assert rules.syntax_rules == [syntax]
+        assert rules.syntax_rules[0].primitive_types == ["string"]
 
     def test_with_whitelist(self):
         """Test rules with whitelist."""
-        rules = ValidationRules(whitelist=["value1", "value2", "value3"])
+        rules = SyntaxRules(syntax_pid="", whitelist=["value1", "value2", "value3"])
 
         assert rules.whitelist
         assert len(rules.whitelist) == 3

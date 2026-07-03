@@ -440,6 +440,7 @@ class TestAttributeValidator:
         assert result.errors == []
         assert result.profiles_checked == 0
         assert result.warnings == []
+        assert result.valid
 
     def test_fails_if_attribute_reference_not_in_record(
         self,

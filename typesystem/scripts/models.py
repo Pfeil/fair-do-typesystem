@@ -87,7 +87,7 @@ class CardinalityViolation:
     pid: str
     attribute: str
     rule: str
-    actual_count: int
+    actual_count: int | float
 
     def message(self) -> str:
         return f"Cardinality violation in {self.attribute} of: {self.pid}. Expected {self.rule}, got {self.actual_count}"
@@ -157,24 +157,6 @@ class ProfilesInfo:
 
 
 @dataclass
-class ValidationRules:
-    """Assembled validation rules for an attribute.
-
-    Result of AttributeAssembly.assemble_rules() - contains all validation
-    rules collected from attribute definition and its syntax definition.
-    """
-
-    cardinality: Optional[str] = None
-    primitive_type: Optional[str] = None
-    validation_mechanisms: List[str] = field(default_factory=list)
-    regex: Optional[str] = None
-    numeric_interval: Optional[Dict[str, Any]] = None
-    whitelist: Optional[List[Any]] = None
-    blacklist: Optional[List[Any]] = None
-    syntax_definition_pid: Optional[str] = None
-
-
-@dataclass
 class ValidationResult:
     """Result of validating a record or attribute.
 
@@ -209,3 +191,32 @@ class ValidationResult:
         self.profiles_checked += other.profiles_checked
         self.attributes_checked += other.attributes_checked
         self.resolutions_performed += other.resolutions_performed
+
+
+@dataclass
+class SyntaxRules:
+    """Assembled syntax rules for an attribute."""
+
+    syntax_pid: str
+    regexes: list[str] = field(default_factory=list)
+    numeric_intervals: list[str] = field(default_factory=list)
+    whitelist: list[Any] = field(default_factory=list)
+    blacklist: list[Any] = field(default_factory=list)
+    primitive_types: list[str] = field(default_factory=list)
+
+    validation_result: ValidationResult = field(default_factory=ValidationResult)
+
+
+@dataclass
+class ValidationRules:
+    """Assembled validation rules for an attribute.
+
+    Result of AttributeAssembly.assemble_rules() - contains all validation
+    rules collected from attribute definition and its syntax definition.
+    """
+
+    cardinality: Optional[str] = None
+    validation_mechanisms: List[str] = field(default_factory=list)
+    syntax_rules: List[SyntaxRules] = field(default_factory=list)
+
+    validation_result: ValidationResult = field(default_factory=ValidationResult)

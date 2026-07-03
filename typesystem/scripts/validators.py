@@ -9,13 +9,14 @@ to assembly components.
 
 import re
 from itertools import chain
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, List, Optional, Set
 
 from assembly import ProfilesAssembly
 from models import (
     CardinalityViolation,
     MissingRequiredAttribute,
     ProfilesInfo,
+    SyntaxRules,
     UnresolvablePid,
     ValueViolation,
     ZeroProfilesContained,
@@ -234,6 +235,9 @@ class AttributeValidator:
         self.mechanism_rules: ValidationRules = self.assembly.assemble_rules(
             "0.FDO/ValidationMechanism"
         )
+        self.primitive_datatype_rules: ValidationRules = self.assembly.assemble_rules(
+            "0.FDO/PrimitiveDataType"
+        )
 
     def validate(self, record: PidRecord, record_pid: str) -> ValidationResult:
         """
@@ -298,21 +302,35 @@ class AttributeValidator:
                     )
                 )
 
+        mechanism_attr: str = "0.FDO/ValidationMechanism"
         for mechanism in attribute_rules.validation_mechanisms:
-            is_valid_mechanism: ValidationResult = self._validate_value(
-                mechanism, self.mechanism_rules, "0.FDO/ValidationMechanism", record_pid
-            )
-            if not is_valid_mechanism.valid:
-                result.merge(is_valid_mechanism)
+            if attr_name != mechanism_attr:
+                # validate (mechanism_attr: mechanism)
+                is_valid_mechanism: ValidationResult = (
+                    self._validate_attribute_by_rules(
+                        mechanism_attr,
+                        self.mechanism_rules,
+                        [mechanism],
+                        mechanism_attr,
+                        PidRecord(
+                            pid=mechanism_attr,
+                            data={mechanism_attr: [mechanism]},
+                            source_pid=mechanism_attr,
+                        ),
+                    )
+                )
+                if not is_valid_mechanism.valid:
+                    result.merge(is_valid_mechanism)
 
             match mechanism:
                 case "Syntax":
                     # VALIDATION: Check each value against syntax rules
                     for value in values:
-                        value_result: ValidationResult = self._validate_value(
-                            value, attribute_rules, attr_name, record_pid
-                        )
-                        result.merge(value_result)
+                        for syntax_rule in attribute_rules.syntax_rules:
+                            value_result: ValidationResult = self._validate_value(
+                                value, syntax_rule, attr_name, record_pid
+                            )
+                            result.merge(value_result)
                 case "AttributeReference":
                     if not record:
                         record = self.registry.resolve_pid(record_pid)
@@ -365,9 +383,25 @@ class AttributeValidator:
         result.resolutions_performed += 1
         return result
 
+    def _check_cardinality_any(
+        self,
+        check_me: Any,
+        cardinality_str: str,
+        attr_name: str,
+        owning_record_pid: str,
+        result: ValidationResult,
+    ) -> bool:
+        if isinstance(check_me, (int, float)):
+            return self._check_cardinality(
+                check_me, cardinality_str, attr_name, owning_record_pid, result
+            )
+        return self._check_cardinality(
+            len(check_me), cardinality_str, attr_name, owning_record_pid, result
+        )
+
     def _check_cardinality(
         self,
-        actual_count: int,
+        actual_count: int | float,
         cardinality_str: str,
         attr_name: str,
         owning_record_pid: str,
@@ -465,7 +499,7 @@ class AttributeValidator:
             return False
 
     def _validate_value(
-        self, value: Any, rules: ValidationRules, attr_name: str, owning_record_pid: str
+        self, value: Any, rules: SyntaxRules, attr_name: str, owning_record_pid: str
     ) -> ValidationResult:
         """
         Validate a single value against assembled rules.
@@ -490,17 +524,15 @@ class AttributeValidator:
         value_str: str = str(value)[:50]  # Truncate for logging
 
         # Type check
-        if rules.primitive_type:
-            if not self._check_type(value, rules.primitive_type):
-                error_msg: str = (
-                    f"{attr_name}: {value_str} is not {rules.primitive_type}"
-                )
+        for primitive_type in rules.primitive_types:
+            if not self._check_type(value, primitive_type):
+                error_msg: str = f"{attr_name}: {value_str} is not {primitive_type}"
                 self.logger.log_step("Type Check", f"✗ {error_msg}", indent=3)
                 result.add_error(
                     ValueViolation(
                         pid=owning_record_pid,
                         attribute=attr_name,
-                        rule=rules.primitive_type,
+                        rule=primitive_type,
                         actual_value=str(value),
                         detail_message=error_msg,
                     )
@@ -508,22 +540,20 @@ class AttributeValidator:
             else:
                 self.logger.log_step(
                     "Type Check",
-                    f"✓ {attr_name}: type OK ({rules.primitive_type})",
+                    f"✓ {attr_name}: type OK ({primitive_type})",
                     indent=3,
                 )
 
         # Regex check (only for strings)
-        if rules.regex and isinstance(value, str):
-            if not self._check_regex(value, rules.regex):
-                error_msg = (
-                    f"{attr_name}: {value_str} doesn't match pattern {rules.regex}"
-                )
+        for regex in rules.regexes:
+            if not self._check_regex(value, regex):
+                error_msg = f"{attr_name}: {value_str} doesn't match pattern {regex}"
                 self.logger.log_step("Regex Check", f"✗ {error_msg}", indent=3)
                 result.add_error(
                     ValueViolation(
                         pid=owning_record_pid,
                         attribute=attr_name,
-                        rule=rules.regex,
+                        rule=regex,
                         actual_value=str(value),
                         detail_message=error_msg,
                     )
@@ -534,18 +564,17 @@ class AttributeValidator:
                 )
 
         # Numeric interval check (only for numbers)
-        if rules.numeric_interval and isinstance(value, (int, float)):
-            if not self._check_numeric_interval(value, rules.numeric_interval):
-                error_msg = (
-                    f"{attr_name}: {value} outside interval "
-                    f"[{rules.numeric_interval.get('min')}, {rules.numeric_interval.get('max')}]"
-                )
+        for interval in rules.numeric_intervals:
+            if not self._check_cardinality_any(
+                value, interval, attr_name, owning_record_pid, result
+            ):
+                error_msg = f"{attr_name}: {value} outside interval {interval}"
                 self.logger.log_step("Interval Check", f"✗ {error_msg}", indent=3)
                 result.add_error(
                     ValueViolation(
                         pid=owning_record_pid,
                         attribute=attr_name,
-                        rule=str(rules.numeric_interval),
+                        rule=str(interval),
                         actual_value=str(value),
                         detail_message=error_msg,
                     )
@@ -556,7 +585,7 @@ class AttributeValidator:
                 )
 
         # Whitelist check
-        if rules.whitelist is not None:
+        if len(rules.whitelist) > 0:
             if value not in rules.whitelist:
                 error_msg = f"{attr_name}: {value_str} not in whitelist"
                 self.logger.log_step("Whitelist Check", f"✗ {error_msg}", indent=3)
@@ -564,7 +593,7 @@ class AttributeValidator:
                     ValueViolation(
                         pid=owning_record_pid,
                         attribute=attr_name,
-                        rule=str(rules.whitelist),
+                        rule=f"Whitelist: {str(rules.whitelist)}",
                         actual_value=str(value),
                         detail_message=error_msg,
                     )
@@ -575,7 +604,7 @@ class AttributeValidator:
                 )
 
         # Blacklist check
-        if rules.blacklist is not None:
+        if len(rules.blacklist) > 0:
             if value in rules.blacklist:
                 error_msg = f"{attr_name}: {value_str} in blacklist"
                 self.logger.log_step("Blacklist Check", f"✗ {error_msg}", indent=3)
@@ -615,10 +644,9 @@ class AttributeValidator:
         elif expected_type == "boolean":
             return isinstance(value, bool)
         else:
-            # Unknown type, be permissive
-            return True
+            return False
 
-    def _check_regex(self, value: str, pattern: str) -> bool:
+    def _check_regex(self, value: Any, pattern: str) -> bool:
         """
         Check if a string value matches a regex pattern.
 
@@ -629,6 +657,8 @@ class AttributeValidator:
         Returns:
             True if value matches pattern
         """
+        if not isinstance(value, str):
+            return False
         try:
             # Note: ECMA-262 regex is mostly compatible with Python
             # Some edge cases might differ, but this works for most patterns
@@ -636,27 +666,6 @@ class AttributeValidator:
         except re.error:
             # Invalid regex
             return False
-
-    def _check_numeric_interval(self, value: float, interval: Dict[str, Any]) -> bool:
-        """
-        Check if a numeric value is within an interval.
-
-        Args:
-            value: The numeric value to check
-            interval: Dict with optional "min" and "max" keys
-
-        Returns:
-            True if value is within interval
-        """
-        min_val: Optional[Any] = interval.get("min")
-        max_val: Optional[Any] = interval.get("max")
-
-        if min_val is not None and value < min_val:
-            return False
-        if max_val is not None and value > max_val:
-            return False
-
-        return True
 
 
 class SpecificationValidator:
