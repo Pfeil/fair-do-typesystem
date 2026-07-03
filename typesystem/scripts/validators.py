@@ -458,7 +458,7 @@ class AttributeValidator:
                     actual_value=cardinality_str,
                     attribute=attr_name,
                     pid=owning_record_pid,
-                    rule="Cardinality Syntax",
+                    rule="0.FDO/CardinalitySyntax",
                     detail_message="Does not match cardinality syntax (int | int..int).",
                 )
             )

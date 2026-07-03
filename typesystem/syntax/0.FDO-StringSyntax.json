@@ -22,9 +22,5 @@
   ],
   "0.FDO/PrimitiveDataType": [
     "string"
-  ],
-  "0.FDO/Regex": [],
-  "0.FDO/NumericInterval": [],
-  "0.FDO/Whitelist": [],
-  "0.FDO/Blacklist": []
+  ]
 }

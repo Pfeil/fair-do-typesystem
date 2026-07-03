@@ -49,7 +49,6 @@ class PidRegistry:
         import re
 
         pid_json = f"{pid}.json"
-        pid_json_without_spec_prefix = re.sub(r"^0.FDO.", "", pid_json)
 
         def slash_replacements(pid: str):
             return [
@@ -60,10 +59,7 @@ class PidRegistry:
                 pid.replace("/", " "),
             ]
 
-        possible_filenames = set(
-            slash_replacements(pid_json)
-            + slash_replacements(pid_json_without_spec_prefix)
-        )
+        possible_filenames = set(slash_replacements(pid_json))
 
         # find any of these in base_path
         candidates = set()
