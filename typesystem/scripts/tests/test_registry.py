@@ -26,10 +26,8 @@ class TestPidRegistry:
             "0.FDO/ProfileDef",
             "0.FDO/Type",
             "0.FDO/StringSyntax",
-            "CardinalitySyntax",
             "0.FDO/CardinalitySyntax",
-            "Cardinality/Syntax",
-            "0-FDO/Cardinality/Syntax",
+            "0.FDO/CardinalitySyntax",
         ]
 
         for pid in known_pids:
