@@ -82,10 +82,11 @@ class PidRegistry:
             )
             return None
 
-        return self._load_record_from_file(pid, file_path)
-        # Resolution failed
-        self.logger.log_resolution(pid, success=False)
-        return None
+        rec = self._load_record_from_file(pid, candidates.pop())
+        if not rec:
+            self.logger.log_resolution(pid, success=False)
+        self.logger.log_resolution(pid, success=True)
+        return rec
 
     def get_all_pids(self) -> set[str]:
         """Return all PIDs known to the registry."""
