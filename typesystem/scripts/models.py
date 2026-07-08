@@ -216,6 +216,7 @@ class ValidationRules:
     """
 
     cardinality: Optional[str] = None
+    null_values: list[Any] = field(default_factory=list)
     validation_mechanisms: List[str] = field(default_factory=list)
     syntax_rules: List[SyntaxRules] = field(default_factory=list)
 

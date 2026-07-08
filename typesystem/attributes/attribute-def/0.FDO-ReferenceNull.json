@@ -10,30 +10,23 @@
   ],
   "0.FDO/Name": [
     {
-      "value": "FDO Type",
+      "value": "Validation Mechanism",
       "lang": "en"
     }
   ],
   "0.FDO/Description": [
     {
-      "value": "Specifies the type of the resource represented by the FDO. Gives a hint to a machine how this object may be processed. Can be repeated multiple times.",
+      "value": "Specifies the validation mechanism for this attribute definition. One of: Syntax (see [R5-8]), Union (see [R5-9]), InlineCombination (see [R5-10]), AttributeReference, ProfileReference, or ExternalVocabularyReference.",
       "lang": "en"
     }
   ],
   "0.FDO/ValidationMechanism": [
-    "Syntax",
-    "AttributeReference"
-  ],
-  "0.FDO/ReferenceNull": [
-    "FDO_Syntax_Definition",
-    "FDO_Attribute_Definition",
-    "FDO_Profile",
-    "FDO_Type_Definition"
+    "Syntax"
   ],
   "0.FDO/DataType": [
     "0.FDO/StringSyntax"
   ],
   "0.FDO/Cardinality": [
-    "1..*"
+    "1"
   ]
 }

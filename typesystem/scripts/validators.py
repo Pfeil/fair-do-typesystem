@@ -322,28 +322,30 @@ class AttributeValidator:
                 if not is_valid_mechanism.valid:
                     result.merge(is_valid_mechanism)
 
-            match mechanism:
-                case "Syntax":
-                    # VALIDATION: Check each value against syntax rules
-                    for value in values:
+            for value in values:
+                if value in attribute_rules.null_values:
+                    continue
+
+                match mechanism:
+                    case "Syntax":
+                        # VALIDATION: Check each value against syntax rules
                         for syntax_rule in attribute_rules.syntax_rules:
                             value_result: ValidationResult = self._validate_value(
                                 value, syntax_rule, attr_name, record_pid
                             )
                             result.merge(value_result)
-                case "AttributeReference":
-                    if not record:
-                        record = self.registry.resolve_pid(record_pid)
+                    case "AttributeReference":
                         if not record:
-                            result.add_error(
-                                UnresolvablePid(
-                                    pid=record_pid,
-                                    cause="Failed to resolve attribute reference",
+                            record = self.registry.resolve_pid(record_pid)
+                            if not record:
+                                result.add_error(
+                                    UnresolvablePid(
+                                        pid=record_pid,
+                                        cause="Failed to resolve attribute reference",
+                                    )
                                 )
-                            )
-                            continue
-                        result.resolutions_performed += 1
-                    for value in values:
+                                continue
+                            result.resolutions_performed += 1
                         is_reference: bool = (
                             record.has_attribute(value)
                             and len(record.get_values(value)) > 0
@@ -358,8 +360,8 @@ class AttributeValidator:
                                     detail_message="Reference not found",
                                 )
                             )
-                case any:
-                    result.add_error(NotImplementedError())
+                    case _:
+                        result.add_error(NotImplementedError())
 
         result.attributes_checked += 1
         return result

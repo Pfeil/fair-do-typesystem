@@ -325,6 +325,7 @@ class AttributeAssembly:
             syntax_rules=[
                 self._extract_syntax_rules(syntax_ref) for syntax_ref in syntax_refs
             ],
+            null_values=attr_def.get_values("0.FDO/ReferenceNull"),
         )
 
         for rule in rules.syntax_rules:
