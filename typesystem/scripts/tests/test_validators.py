@@ -12,6 +12,7 @@ from assembly import AttributeAssembly, ExtensionsAssembly, ProfilesAssembly
 from models import (
     MissingRequiredAttribute,
     PidRecord,
+    UnresolvablePid,
     ValidationResult,
     ZeroProfilesContained,
 )
@@ -404,6 +405,7 @@ class TestAttributeValidator:
                 "0.FDO/Type": ["FDO_Profile"],
                 "0.FDO/Profile": ["0.FDO/Root"],
                 "0.FDO/Data": ["Not_Applicable"],
+                "0.FDO/ReferenceNull": ["hello"],
             },
             source_pid=pid,
         )
@@ -412,6 +414,31 @@ class TestAttributeValidator:
 
         assert result.errors == []
         assert result.valid is True
+
+    def test_validate_with_undefined_attribute(
+        self, attribute_validator: AttributeValidator
+    ):
+        """Test undefined attributes cause errors."""
+
+        # Create a record with an undefined attribute
+        record: PidRecord = PidRecord(
+            pid="test/Undefined",
+            data={
+                "0.FDO/Type": ["FDO_Profile"],
+                "0.FDO/Profile": ["0.FDO/Root"],
+                "0.FDO/Data": ["Not_Applicable"],
+                "nonexisting": ["asd"],
+            },
+            source_pid="test/Undefined",
+        )
+
+        result: ValidationResult = attribute_validator.validate(
+            record, "test/Undefined"
+        )
+
+        assert len(result.errors) == 1
+        assert isinstance(result.errors[0], UnresolvablePid)
+        assert result.valid is False
 
     def test_validate_with_missing_attribute(
         self, attribute_validator: AttributeValidator

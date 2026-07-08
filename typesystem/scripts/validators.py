@@ -373,12 +373,17 @@ class AttributeValidator:
         record_pid: str,
         record: PidRecord,
     ) -> ValidationResult:
-        result = self._validate_attribute_by_rules(
-            attr_name,
-            self.assembly.assemble_rules(attr_name),
-            values,
-            record_pid,
-            record,
+        result = ValidationResult()
+        rules = self.assembly.assemble_rules(attr_name)
+        result.merge(rules.validation_result)
+        result.merge(
+            self._validate_attribute_by_rules(
+                attr_name,
+                rules,
+                values,
+                record_pid,
+                record,
+            )
         )
         # TODO as long as the validation rules do not collect resolutions
         # during assembly, we do not really know how much to add here.
