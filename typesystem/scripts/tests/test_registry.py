@@ -112,7 +112,7 @@ class TestPidRegistry:
 
     def test_resolution_increments_logger_count(self):
         """Test that each resolution increments the logger's counter."""
-        logger = ValidationLogger(verbose=False)
+        logger = ValidationLogger(verbose=True)
         registry = PidRegistry(logger)
 
         initial_count = logger.get_resolution_count()

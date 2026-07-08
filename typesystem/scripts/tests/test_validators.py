@@ -410,6 +410,7 @@ class TestAttributeValidator:
 
         result: ValidationResult = attribute_validator.validate(record, pid)
 
+        assert result.errors == []
         assert result.valid is True
 
     def test_validate_with_missing_attribute(
