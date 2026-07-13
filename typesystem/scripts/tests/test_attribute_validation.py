@@ -664,13 +664,13 @@ class TestWhitelistBlacklistValidation:
         rules = SyntaxRules(syntax_pid="", whitelist=["red", "green", "blue"])
 
         # Valid: in whitelist
-        result = attribute_validator._validate_value(
+        result = attribute_validator._validate_syntax(
             "red", rules, "color", "owning_record_pid"
         )
         assert result.valid is True
 
         # Invalid: not in whitelist
-        result = attribute_validator._validate_value(
+        result = attribute_validator._validate_syntax(
             "yellow", rules, "color", "owning_record_pid"
         )
         assert result.valid is False
@@ -683,13 +683,13 @@ class TestWhitelistBlacklistValidation:
         rules = SyntaxRules(syntax_pid="", blacklist=["spam", "scam"])
 
         # Valid: not in blacklist
-        result = attribute_validator._validate_value(
+        result = attribute_validator._validate_syntax(
             "legit", rules, "type", "owning_record_pid"
         )
         assert result.valid is True
 
         # Invalid: in blacklist
-        result = attribute_validator._validate_value(
+        result = attribute_validator._validate_syntax(
             "spam", rules, "type", "owning_record_pid"
         )
         assert result.valid is False
@@ -702,7 +702,7 @@ class TestWhitelistBlacklistValidation:
         rules = SyntaxRules(syntax_pid="")
 
         # Should be valid with no constraints
-        result = attribute_validator._validate_value(
+        result = attribute_validator._validate_syntax(
             "anything", rules, "field", "owning_record_pid"
         )
         assert result.valid is True
@@ -718,14 +718,14 @@ class TestWhitelistBlacklistValidation:
         )
 
         # Whitelisted, not blacklisted -> works
-        result = attribute_validator._validate_value(
+        result = attribute_validator._validate_syntax(
             "apple", rules, "field", "owning_record_pid"
         )
         assert result.valid is True
         assert len(result.errors) == 0
 
         # Not whitelisted, blacklisted -> fails
-        result = attribute_validator._validate_value(
+        result = attribute_validator._validate_syntax(
             "orange", rules, "field", "owning_record_pid"
         )
         assert result.valid is False
@@ -733,7 +733,7 @@ class TestWhitelistBlacklistValidation:
         assert len(result.errors) == 2
 
         # In Whitelist and in blacklist -> fails (blacklist rules)
-        result = attribute_validator._validate_value(
+        result = attribute_validator._validate_syntax(
             "fruit", rules, "field", "owning_record_pid"
         )
         assert result.valid is False

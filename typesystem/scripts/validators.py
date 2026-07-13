@@ -301,9 +301,41 @@ class AttributeValidator:
                         actual_count=len(values),
                     )
                 )
+        result.merge(self._validate_mechanisms(attr_name, attribute_rules, values, record_pid, record))
+        return result
 
+    def _validate_mechanisms(
+        self,
+        attr_name: str,
+        attribute_rules: ValidationRules,
+        values: list[Any],
+        record_pid: str,
+        record: PidRecord | None,
+    ) -> ValidationResult:
+        """
+        Validate all values against 0.FDO/ValidationMechanism.
+
+        Resolves mechanisms from the attribute rules and validates each one
+        against the attribute's values.
+
+        Args:
+            attr_name: Name of the attribute being validated.
+            attribute_rules: Validation rules for the attribute.
+            values: List of values to validate.
+            record_pid: PID of the record being validated. Usually only
+              used for logging.
+            record: Resolved PID record for the attribute, if available. Contains
+              attr_name and values. Usually
+              only used for logging.
+
+        Returns:
+            A ValidationResult containing any validation errors or warnings.
+        """
+        result = ValidationResult()
         mechanism_attr: str = "0.FDO/ValidationMechanism"
         for mechanism in attribute_rules.validation_mechanisms:
+            # Skipping is fine, as, in this case, this is what
+            # this function actually does currently.
             if attr_name != mechanism_attr:
                 # validate (mechanism_attr: mechanism)
                 is_valid_mechanism: ValidationResult = (
@@ -319,8 +351,7 @@ class AttributeValidator:
                         ),
                     )
                 )
-                if not is_valid_mechanism.valid:
-                    result.merge(is_valid_mechanism)
+                result.merge(is_valid_mechanism)
 
             for value in values:
                 if value in attribute_rules.null_values:
@@ -328,38 +359,16 @@ class AttributeValidator:
 
                 match mechanism:
                     case "Syntax":
-                        # VALIDATION: Check each value against syntax rules
                         for syntax_rule in attribute_rules.syntax_rules:
-                            value_result: ValidationResult = self._validate_value(
+                            value_result: ValidationResult = self._validate_syntax(
                                 value, syntax_rule, attr_name, record_pid
                             )
                             result.merge(value_result)
                     case "AttributeReference":
-                        if not record:
-                            record = self.registry.resolve_pid(record_pid)
-                            if not record:
-                                result.add_error(
-                                    UnresolvablePid(
-                                        pid=record_pid,
-                                        cause="Failed to resolve attribute reference",
-                                    )
-                                )
-                                continue
-                            result.resolutions_performed += 1
-                        is_reference: bool = (
-                            record.has_attribute(value)
-                            and len(record.get_values(value)) > 0
-                        )
-                        if not is_reference:
-                            result.add_error(
-                                ValueViolation(
-                                    pid=record_pid,
-                                    attribute=attr_name,
-                                    actual_value=value,
-                                    rule="ValidationMechanism = AttributeReference",
-                                    detail_message="Reference not found",
-                                )
-                            )
+                        is_reference_result = self._check_attribute_reference(value, attr_name, record_pid, record)
+                        result.merge(is_reference_result)
+                        if not is_reference_result.valid:
+                            continue
                     case _:
                         result.add_error(NotImplementedError())
 
@@ -388,6 +397,43 @@ class AttributeValidator:
         # TODO as long as the validation rules do not collect resolutions
         # during assembly, we do not really know how much to add here.
         result.resolutions_performed += 1
+        return result
+
+    def _check_attribute_reference(
+        self,
+        value: Any,
+        attr_name: str,
+        record_pid: str,
+        record: PidRecord | None,
+    ) -> ValidationResult:
+        result = ValidationResult()
+
+        if not record:
+            record = self.registry.resolve_pid(record_pid)
+            if not record:
+                result.add_error(
+                    UnresolvablePid(
+                        pid=record_pid,
+                        cause="Failed to resolve attribute reference",
+                    )
+                )
+                return result
+            result.resolutions_performed += 1
+        is_reference: bool = (
+            record.has_attribute(value)
+            and len(record.get_values(value)) > 0
+        )
+        if not is_reference:
+            result.add_error(
+                ValueViolation(
+                    pid=record_pid,
+                    attribute=attr_name,
+                    actual_value=value,
+                    rule="ValidationMechanism = AttributeReference",
+                    detail_message="Reference not found",
+                )
+            )
+
         return result
 
     def _check_cardinality_any(
@@ -505,7 +551,7 @@ class AttributeValidator:
             )
             return False
 
-    def _validate_value(
+    def _validate_syntax(
         self, value: Any, rules: SyntaxRules, attr_name: str, owning_record_pid: str
     ) -> ValidationResult:
         """
