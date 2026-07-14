@@ -29,6 +29,5 @@
   ],
   "0.FDO/Cardinality": [
     "0..*"
-  ],
-  "_note": "See 0.FDO-Description.md for uncertainty about localized value structure"
+  ]
 }
