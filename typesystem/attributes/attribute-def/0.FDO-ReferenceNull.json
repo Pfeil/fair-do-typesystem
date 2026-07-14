@@ -27,6 +27,6 @@
     "0.FDO/StringSyntax"
   ],
   "0.FDO/Cardinality": [
-    "1"
+    "1..*"
   ]
 }
