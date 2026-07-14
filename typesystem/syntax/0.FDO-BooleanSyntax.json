@@ -10,14 +10,14 @@
   ],
   "0.FDO/Name": [
     {
-      "value": "Boolean",
-      "lang": "en"
+      "0.FDO/StringSyntax": "Boolean",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/Description": [
     {
-      "value": "Boolean data type. Represents truth values: true or false.",
-      "lang": "en"
+      "0.FDO/StringSyntax": "Boolean data type. Represents truth values: true or false.",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/PrimitiveDataType": [

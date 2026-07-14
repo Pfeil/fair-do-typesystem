@@ -10,14 +10,14 @@
   ],
   "0.FDO/Name": [
     {
-      "value": "Regex",
-      "lang": "en"
+      "0.FDO/StringSyntax": "Regex",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/Description": [
     {
-      "value": "Only applicable if 0.FDO/PrimitiveDataType is string. This regular expression in ECMA-252 syntax MUST be successfully validated for all attributes that use this syntax definition.",
-      "lang": "en"
+      "0.FDO/StringSyntax": "Only applicable if 0.FDO/PrimitiveDataType is string. This regular expression in ECMA-252 syntax MUST be successfully validated for all attributes that use this syntax definition.",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/ValidationMechanism": [

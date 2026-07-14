@@ -10,14 +10,14 @@
   ],
   "0.FDO/Name": [
     {
-      "value": "String",
-      "lang": "en"
+      "0.FDO/StringSyntax": "String",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/Description": [
     {
-      "value": "Basic string data type with no additional constraints. Any valid Unicode string is accepted.",
-      "lang": "en"
+      "0.FDO/StringSyntax": "Basic string data type with no additional constraints. Any valid Unicode string is accepted.",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/PrimitiveDataType": [

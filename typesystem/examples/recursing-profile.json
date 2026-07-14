@@ -4,14 +4,14 @@
   "0.FDO/Data": ["Not_Applicable"],
   "0.FDO/Name": [
     {
-      "value": "Test Profile",
-      "lang": "en"
+      "0.FDO/StringSyntax": "Test Profile",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/Description": [
     {
-      "value": "A Profile with extension.",
-      "lang": "en"
+      "0.FDO/StringSyntax": "A Profile with extension.",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/Attribute": ["recursive_attribute"],

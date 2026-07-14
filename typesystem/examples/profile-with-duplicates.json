@@ -4,14 +4,14 @@
   "0.FDO/Data": ["Not_Applicable"],
   "0.FDO/Name": [
     {
-      "value": "Profile with Duplicate Attributes",
-      "lang": "en"
+      "0.FDO/StringSyntax": "Profile with Duplicate Attributes",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/Description": [
     {
-      "value": "This is for tests that check duplications do not matter, and therefore do not change anything.",
-      "lang": "en"
+      "0.FDO/StringSyntax": "This is for tests that check duplications do not matter, and therefore do not change anything.",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/Attribute": [

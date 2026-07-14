@@ -7,6 +7,7 @@ Validators focus purely on validation logic - they delegate data gathering
 to assembly components.
 """
 
+import json
 import re
 from itertools import chain
 from typing import Any, List, Optional, Set
@@ -301,7 +302,11 @@ class AttributeValidator:
                         actual_count=len(values),
                     )
                 )
-        result.merge(self._validate_mechanisms(attr_name, attribute_rules, values, record_pid, record))
+        result.merge(
+            self._validate_mechanisms(
+                attr_name, attribute_rules, values, record_pid, record
+            )
+        )
         return result
 
     def _validate_mechanisms(
@@ -365,9 +370,70 @@ class AttributeValidator:
                             )
                             result.merge(value_result)
                     case "AttributeReference":
-                        is_reference_result = self._check_attribute_reference(value, attr_name, record_pid, record)
+                        is_reference_result = self._check_attribute_reference(
+                            value, attr_name, record_pid, record
+                        )
                         result.merge(is_reference_result)
                         if not is_reference_result.valid:
+                            continue
+                    case "InlineCombination":
+                        # read value as json
+                        try:
+                            if (
+                                not isinstance(value, dict)
+                                and len(attribute_rules.syntax_rules) > 1
+                            ):
+                                result.add_error(
+                                    ValueViolation(
+                                        actual_value=value,
+                                        detail_message="Not a valid JSON dictionary for InlineCombination",
+                                        rule="InlineCombination",
+                                        attribute=attr_name,
+                                        pid=record_pid,
+                                    )
+                                )
+                                continue
+
+                            def is_valid_value_result(r: ValidationResult) -> bool:
+                                return r.valid
+
+                            for syntax_rule in attribute_rules.syntax_rules:
+                                # TODO support name as key
+                                name_set = set([syntax_rule.syntax_pid]).intersection(
+                                    value.keys()
+                                )
+                                # TODO support attributes as datatype
+                                if len(name_set) != 1:
+                                    result.add_error(
+                                        ValueViolation(
+                                            actual_value=json.dumps(value),
+                                            detail_message=f"Expected exactly one matching attribute for syntax rule {syntax_rule.syntax_pid}, found {len(name_set)}",
+                                            rule="InlineCombination",
+                                            attribute=attr_name,
+                                            pid=record_pid,
+                                        )
+                                    )
+                                    continue
+
+                                name = name_set.pop()
+                                result.merge(
+                                    self._validate_syntax(
+                                        value[name],
+                                        syntax_rule,
+                                        attr_name,
+                                        owning_record_pid=record_pid,
+                                    )
+                                )
+                        except json.JSONDecodeError:
+                            result.add_error(
+                                ValueViolation(
+                                    actual_value=json.dumps(value),
+                                    detail_message="Not (valid) JSON, expected for InlineCombination",
+                                    rule="InlineCombination",
+                                    attribute=attr_name,
+                                    pid=record_pid,
+                                )
+                            )
                             continue
                     case _:
                         result.add_error(NotImplementedError())
@@ -420,8 +486,7 @@ class AttributeValidator:
                 return result
             result.resolutions_performed += 1
         is_reference: bool = (
-            record.has_attribute(value)
-            and len(record.get_values(value)) > 0
+            record.has_attribute(value) and len(record.get_values(value)) > 0
         )
         if not is_reference:
             result.add_error(

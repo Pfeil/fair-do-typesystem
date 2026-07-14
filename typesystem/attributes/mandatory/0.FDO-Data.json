@@ -10,14 +10,14 @@
   ],
   "0.FDO/Name": [
     {
-      "value": "FDO Data",
-      "lang": "en"
+      "0.FDO/StringSyntax": "FDO Data",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/Description": [
     {
-      "value": "Points to data associated with the FDO. The first element of such a tuple is either the PID 0.FDO/Data or the string FDO_Data. Follows the attribute referencing mechanism. Can be repeated multiple times.",
-      "lang": "en"
+      "0.FDO/StringSyntax": "Points to data associated with the FDO. The first element of such a tuple is either the PID 0.FDO/Data or the string FDO_Data. Follows the attribute referencing mechanism. Can be repeated multiple times.",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/ValidationMechanism": [

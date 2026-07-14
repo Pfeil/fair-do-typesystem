@@ -10,14 +10,14 @@
   ],
   "0.FDO/Name": [
     {
-      "value": "Syntax Definition Profile",
-      "lang": "en"
+      "0.FDO/StringSyntax": "Syntax Definition Profile",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/Description": [
     {
-      "value": "The profile that all syntax definitions must comply with. Defines the structure for creating new FDO syntax definitions.",
-      "lang": "en"
+      "0.FDO/StringSyntax": "The profile that all syntax definitions must comply with. Defines the structure for creating new FDO syntax definitions.",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/Attribute": [

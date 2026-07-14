@@ -10,14 +10,14 @@
   ],
   "0.FDO/Name": [
     {
-      "value": "Primitive Data Type Syntax",
-      "lang": "en"
+      "0.FDO/StringSyntax": "Primitive Data Type Syntax",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/Description": [
     {
-      "value": "Defines the allowed primitive data type names. One of: string, number, integer, boolean. All of these primitives MUST be supported by all clients.",
-      "lang": "en"
+      "0.FDO/StringSyntax": "Defines the allowed primitive data type names. One of: string, number, integer, boolean. All of these primitives MUST be supported by all clients.",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/PrimitiveDataType": [

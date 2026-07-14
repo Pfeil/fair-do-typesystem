@@ -10,14 +10,14 @@
   ],
   "0.FDO/Name": [
     {
-      "value": "Numeric Interval",
-      "lang": "en"
+      "0.FDO/StringSyntax": "Numeric Interval",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/Description": [
     {
-      "value": "An interval for the value (space of real numbers), that has different meanings depending on the primitive data type. If 0.FDO/PrimitiveDataType is string: a range of the length of the value. If 0.FDO/PrimitiveDataType is number or integer: an interval that restricts the attribute value.",
-      "lang": "en"
+      "0.FDO/StringSyntax": "An interval for the value (space of real numbers), that has different meanings depending on the primitive data type. If 0.FDO/PrimitiveDataType is string: a range of the length of the value. If 0.FDO/PrimitiveDataType is number or integer: an interval that restricts the attribute value.",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/ValidationMechanism": [
@@ -28,6 +28,5 @@
   ],
   "0.FDO/Cardinality": [
     "0..1"
-  ],
-  "_note": "See 0.FDO-NumericInterval.md for uncertainty about interval format"
+  ]
 }

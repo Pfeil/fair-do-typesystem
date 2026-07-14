@@ -10,14 +10,14 @@
   ],
   "0.FDO/Name": [
     {
-      "value": "Integer",
-      "lang": "en"
+      "0.FDO/StringSyntax": "Integer",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/Description": [
     {
-      "value": "Integer number data type. Represents whole numbers without fractional parts. Can be positive, negative, or zero.",
-      "lang": "en"
+      "0.FDO/StringSyntax": "Integer number data type. Represents whole numbers without fractional parts. Can be positive, negative, or zero.",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/PrimitiveDataType": [

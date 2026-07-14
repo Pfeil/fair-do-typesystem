@@ -10,14 +10,14 @@
   ],
   "0.FDO/Name": [
     {
-      "value": "Root Profile",
-      "lang": "en"
+      "0.FDO/StringSyntax": "Root Profile",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/Description": [
     {
-      "value": "The minimal profile that every FDO must validate against. Defines the three mandatory attributes: Type, Profile, and Data.",
-      "lang": "en"
+      "0.FDO/StringSyntax": "The minimal profile that every FDO must validate against. Defines the three mandatory attributes: Type, Profile, and Data.",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/Attribute": [

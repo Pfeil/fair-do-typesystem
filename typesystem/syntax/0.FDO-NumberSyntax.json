@@ -10,14 +10,14 @@
   ],
   "0.FDO/Name": [
     {
-      "value": "Number",
-      "lang": "en"
+      "0.FDO/StringSyntax": "Number",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/Description": [
     {
-      "value": "Floating-point number data type. Represents real numbers including decimals. Follows IEEE 754 double-precision format.",
-      "lang": "en"
+      "0.FDO/StringSyntax": "Floating-point number data type. Represents real numbers including decimals. Follows IEEE 754 double-precision format.",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/PrimitiveDataType": [

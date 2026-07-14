@@ -10,21 +10,22 @@
   ],
   "0.FDO/Name": [
     {
-      "value": "Name",
-      "lang": "en"
+      "0.FDO/StringSyntax": "Name",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/Description": [
     {
-      "value": "Human-readable and localized labels for the FDO attribute definition or profile. All of these are viable candidates for referencing the respective definition in FDOs.",
-      "lang": "en"
+      "0.FDO/StringSyntax": "Human-readable and localized labels for the FDO attribute definition or profile. All of these are viable candidates for referencing the respective definition in FDOs.",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/ValidationMechanism": [
-    "Syntax"
+    "InlineCombination"
   ],
   "0.FDO/DataType": [
-    "0.FDO/StringSyntax"
+    "0.FDO/StringSyntax",
+    "0.FDO/LanguageTag"
   ],
   "0.FDO/Cardinality": [
     "1..*"

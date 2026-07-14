@@ -456,6 +456,58 @@ class TestCardinalityValidation:
 
 
 # =============================================================================
+# TestLocalizedStringValidation - Localized string validation tests
+# =============================================================================
+
+
+class TestInlineCombinationValidation:
+    """
+    Test validation logic for attributes that use
+    0.FDO/ValidationMechanism: "InlineCombination".
+    """
+
+    @pytest.fixture
+    def attributes(self) -> list[str]:
+        """Attributes that support localized strings."""
+        return ["0.FDO/Name", "0.FDO/Description"]
+
+    def test_primitive_string_fails(
+        self, attribute_validator: AttributeValidator, attributes: list[str]
+    ):
+        for attribute_pid in attributes:
+            pid = "test_pid"
+            record = PidRecord(
+                data={attribute_pid: ["my value"]}, pid=pid, source_pid=pid
+            )
+            result = attribute_validator.validate(record=record, record_pid=pid)
+            assert result.valid is False, (
+                f"Expected invalid result for {attribute_pid}, got {result.errors}"
+            )
+
+    def test_with_syntax_pids_works(
+        self, attribute_validator: AttributeValidator, attributes: list[str]
+    ):
+        for attribute_pid in attributes:
+            pid = "test_pid"
+            record = PidRecord(
+                data={
+                    attribute_pid: [
+                        {
+                            "0.FDO/LanguageTag": "en",
+                            "0.FDO/StringSyntax": "my name",
+                        }
+                    ]
+                },
+                pid=pid,
+                source_pid=pid,
+            )
+            result = attribute_validator.validate(record=record, record_pid=pid)
+            assert result.valid is True, (
+                f"Expected valid result for {attribute_pid}, got {result.errors}"
+            )
+
+
+# =============================================================================
 # TestTypeValidation - Type checking tests
 # =============================================================================
 
