@@ -24,7 +24,7 @@
     "Syntax"
   ],
   "0.FDO/DataType": [
-    "PrimitiveDataTypeSyntax"
+    "0.FDO/PrimitiveDataTypeSyntax"
   ],
   "0.FDO/Cardinality": [
     "1"

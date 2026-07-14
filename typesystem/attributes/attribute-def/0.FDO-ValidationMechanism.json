@@ -24,7 +24,7 @@
     "Syntax"
   ],
   "0.FDO/DataType": [
-    "ValidationMechanismSyntax"
+    "0.FDO/ValidationMechanismSyntax"
   ],
   "0.FDO/Cardinality": [
     "1"
