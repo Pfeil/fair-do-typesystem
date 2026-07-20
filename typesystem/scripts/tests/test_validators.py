@@ -10,6 +10,7 @@ import pytest
 
 from assembly import AttributeAssembly, ExtensionsAssembly, ProfilesAssembly
 from models import (
+    CardinalityViolation,
     MissingRequiredAttribute,
     PidRecord,
     UnresolvablePid,
@@ -169,7 +170,7 @@ class TestProfileValidator:
 
         assert result.valid is False
         assert len(result.errors) == 1
-        assert isinstance(result.errors[0], MissingRequiredAttribute)
+        assert isinstance(result.errors[0], CardinalityViolation)
 
     def test_validate_no_profile_reference(
         self,
