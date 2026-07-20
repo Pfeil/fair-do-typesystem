@@ -131,7 +131,7 @@ class TestAttributeAssembly:
         assert rules.cardinality
         assert len(rules.cardinality) > 0
         assert len(rules.syntax_rules) == 1
-        assert len(rules.validation_mechanisms) == 2
+        assert len(rules.validation_mechanisms) == 1
         syntax = rules.syntax_rules[0]
         assert syntax.primitive_types == ["string"]
 
