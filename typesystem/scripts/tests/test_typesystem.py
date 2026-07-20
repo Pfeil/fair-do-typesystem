@@ -43,8 +43,9 @@ def profile_validator(
     logger: ValidationLogger,
     profiles_assembly: ProfilesAssembly,
     extensions_assembly: ExtensionsAssembly,
+    attribute_assembly: AttributeAssembly,
 ) -> ProfileValidator:
-    return ProfileValidator(registry, logger, profiles_assembly, extensions_assembly)
+    return ProfileValidator(registry, logger, profiles_assembly, extensions_assembly, attribute_assembly)
 
 
 @pytest.fixture

@@ -62,8 +62,9 @@ def profile_validator(
     logger: ValidationLogger,
     profiles_assembly: ProfilesAssembly,
     extensions_assembly: ExtensionsAssembly,
+    attribute_assembly: AttributeAssembly,
 ) -> ProfileValidator:
-    return ProfileValidator(registry, logger, profiles_assembly, extensions_assembly)
+    return ProfileValidator(registry, logger, profiles_assembly, extensions_assembly, attribute_assembly)
 
 @pytest.fixture
 def attribute_validator(logger, registry, attribute_assembly):
@@ -428,7 +429,7 @@ class TestProfileValidatorIntegration:
         assert record
 
         # Data uses a profile making use of 0.FDO/Extends:
-        extending_profile_name: str = "extended-profile"
+        extending_profile_name: str = "extending-profile"
         logger.verbose = True
 
         result = profile_validator.validate(record)
@@ -447,10 +448,6 @@ class TestProfileValidatorIntegration:
 
 class TestAttributeValidator:
     """Test AttributeValidator validation functionality."""
-
-    @pytest.fixture
-    def attribute_validator(self, logger, registry, attribute_assembly):
-        return AttributeValidator(registry, logger, attribute_assembly)
 
     def test_attribute_validator_instantiation(
         self, attribute_validator: AttributeValidator

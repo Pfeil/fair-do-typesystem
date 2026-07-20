@@ -15,7 +15,7 @@ from assembly import AttributeAssembly
 from models import PidRecord, SyntaxRules, ValidationResult
 from registry import PidRegistry
 from validation_logger import ValidationLogger
-from validators import AttributeValidator
+from validators import AttributeValidator, CardinalityValidator
 
 # =============================================================================
 # Fixtures
@@ -44,6 +44,12 @@ def attribute_assembly(registry, logger) -> AttributeAssembly:
 def attribute_validator(registry, logger, attribute_assembly) -> AttributeValidator:
     """Create an AttributeValidator for testing."""
     return AttributeValidator(registry, logger, attribute_assembly)
+
+
+@pytest.fixture
+def cardinality_validator(registry, logger, attribute_assembly) -> CardinalityValidator:
+    """Create a CardinalityValidator for testing."""
+    return CardinalityValidator(registry, logger, attribute_assembly)
 
 
 @pytest.fixture
@@ -252,14 +258,14 @@ class TestCardinalityValidation:
         assert not result.valid
 
     def test_check_cardinality_exactly_one(
-        self, attribute_validator: AttributeValidator
+        self, cardinality_validator: CardinalityValidator
     ):
         """Test cardinality "1" (exactly one)."""
         result = ValidationResult()
 
         # Valid: exactly one value
         assert (
-            attribute_validator._check_cardinality(
+            cardinality_validator._check_cardinality(
                 1, "1", self.attribute_name, self.owning_record_pid, result
             )
             is True
@@ -268,7 +274,7 @@ class TestCardinalityValidation:
         for actual_count in [0, 2, 3, 9999, -1, -9999]:
             result = ValidationResult()
             assert (
-                attribute_validator._check_cardinality(
+                cardinality_validator._check_cardinality(
                     actual_count,
                     "1",
                     self.attribute_name,
@@ -282,7 +288,7 @@ class TestCardinalityValidation:
             )
 
     def test_check_cardinality_zero_or_one(
-        self, attribute_validator: AttributeValidator
+        self, cardinality_validator: CardinalityValidator
     ):
         """Test cardinality "0..1" (optional)."""
 
@@ -292,7 +298,7 @@ class TestCardinalityValidation:
 
             # Valid: zero values
             assert (
-                attribute_validator._check_cardinality(
+                cardinality_validator._check_cardinality(
                     actual_count,
                     "0..1",
                     self.attribute_name,
@@ -305,7 +311,7 @@ class TestCardinalityValidation:
         for actual_count in invalid_values:
             result = ValidationResult()
             assert (
-                attribute_validator._check_cardinality(
+                cardinality_validator._check_cardinality(
                     actual_count,
                     "0..1",
                     self.attribute_name,
@@ -319,14 +325,14 @@ class TestCardinalityValidation:
             )
 
     def test_check_cardinality_one_or_more(
-        self, attribute_validator: AttributeValidator
+        self, cardinality_validator: CardinalityValidator
     ):
         """Test cardinality "1..*" (mandatory, repeatable)."""
         valid_values = [1, 5, 10, 9999]
         for actual_count in valid_values:
             result = ValidationResult()
             assert (
-                attribute_validator._check_cardinality(
+                cardinality_validator._check_cardinality(
                     actual_count,
                     "1..*",
                     self.attribute_name,
@@ -343,7 +349,7 @@ class TestCardinalityValidation:
         for actual_count in invalid_values:
             result = ValidationResult()
             assert (
-                attribute_validator._check_cardinality(
+                cardinality_validator._check_cardinality(
                     actual_count,
                     "1..*",
                     self.attribute_name,
@@ -357,7 +363,7 @@ class TestCardinalityValidation:
             )
 
     def test_check_cardinality_zero_or_more(
-        self, attribute_validator: AttributeValidator
+        self, cardinality_validator: CardinalityValidator
     ):
         """Test cardinality "0..*" (optional, repeatable)."""
         expression = "0..*"
@@ -365,7 +371,7 @@ class TestCardinalityValidation:
         for actual_value in valid_values:
             result = ValidationResult()
             assert (
-                attribute_validator._check_cardinality(
+                cardinality_validator._check_cardinality(
                     actual_value,
                     expression,
                     self.attribute_name,
@@ -382,7 +388,7 @@ class TestCardinalityValidation:
         for actual_value in invalid_values:
             result = ValidationResult()
             assert (
-                attribute_validator._check_cardinality(
+                cardinality_validator._check_cardinality(
                     actual_value,
                     expression,
                     self.attribute_name,
@@ -395,7 +401,7 @@ class TestCardinalityValidation:
                 f"Expected no errors for actual_count={actual_value}, got {result.errors}"
             )
 
-    def test_check_cardinality_range(self, attribute_validator: AttributeValidator):
+    def test_check_cardinality_range(self, cardinality_validator: CardinalityValidator):
         """Test cardinality "2..3" (range)."""
         expression = "2..3"
         valid_values = [2, 3]
@@ -403,7 +409,7 @@ class TestCardinalityValidation:
             result = ValidationResult()
 
             assert (
-                attribute_validator._check_cardinality(
+                cardinality_validator._check_cardinality(
                     actual_value,
                     expression,
                     self.attribute_name,
@@ -421,7 +427,7 @@ class TestCardinalityValidation:
             result = ValidationResult()
 
             assert (
-                attribute_validator._check_cardinality(
+                cardinality_validator._check_cardinality(
                     actual_value,
                     expression,
                     self.attribute_name,
@@ -435,7 +441,7 @@ class TestCardinalityValidation:
             )
 
     def test_check_cardinality_invalid_expression(
-        self, attribute_validator: AttributeValidator
+        self, cardinality_validator: CardinalityValidator
     ):
         """
         Test if invalid cardinalities lead to an error.
@@ -445,7 +451,7 @@ class TestCardinalityValidation:
         for amount in invalid_amounts:
             result = ValidationResult()
             assert (
-                attribute_validator._check_cardinality(
+                cardinality_validator._check_cardinality(
                     amount,
                     invalid_cardinality_str,
                     self.attribute_name,
@@ -598,103 +604,103 @@ class TestRegexValidation:
 class TestNumericIntervalValidation:
     """Test numeric interval validation logic."""
 
-    def test_check_interval_min_only(self, attribute_validator: AttributeValidator):
+    def test_check_interval_min_only(self, cardinality_validator: CardinalityValidator):
         """Test interval with minimum only."""
         interval = "0..*"
         result = ValidationResult()
 
         assert (
-            attribute_validator._check_cardinality_any(
+            cardinality_validator._check_cardinality_any(
                 5, interval, "test", "pid", result
             )
             is True
         )
         assert (
-            attribute_validator._check_cardinality_any(
+            cardinality_validator._check_cardinality_any(
                 0, interval, "test", "pid", result
             )
             is True
         )
         assert (
-            attribute_validator._check_cardinality_any(
+            cardinality_validator._check_cardinality_any(
                 -1, interval, "test", "pid", result
             )
             is False
         )
 
-    def test_check_interval_max_only(self, attribute_validator: AttributeValidator):
+    def test_check_interval_max_only(self, cardinality_validator: CardinalityValidator):
         """Test interval with maximum only."""
         interval = "0..100"
         result = ValidationResult()
 
         assert (
-            attribute_validator._check_cardinality_any(
+            cardinality_validator._check_cardinality_any(
                 50, interval, "test", "pid", result
             )
             is True
         )
         assert (
-            attribute_validator._check_cardinality_any(
+            cardinality_validator._check_cardinality_any(
                 100, interval, "test", "pid", result
             )
             is True
         )
         assert (
-            attribute_validator._check_cardinality_any(
+            cardinality_validator._check_cardinality_any(
                 101, interval, "test", "pid", result
             )
             is False
         )
 
-    def test_check_interval_both_bounds(self, attribute_validator: AttributeValidator):
+    def test_check_interval_both_bounds(self, cardinality_validator: CardinalityValidator):
         """Test interval with both min and max."""
         interval = "10..20"
         result = ValidationResult()
 
         assert (
-            attribute_validator._check_cardinality_any(
+            cardinality_validator._check_cardinality_any(
                 15, interval, "test", "pid", result
             )
             is True
         )
         assert (
-            attribute_validator._check_cardinality_any(
+            cardinality_validator._check_cardinality_any(
                 10, interval, "test", "pid", result
             )
             is True
         )
         assert (
-            attribute_validator._check_cardinality_any(
+            cardinality_validator._check_cardinality_any(
                 20, interval, "test", "pid", result
             )
             is True
         )
         assert (
-            attribute_validator._check_cardinality_any(
+            cardinality_validator._check_cardinality_any(
                 9, interval, "test", "pid", result
             )
             is False
         )
         assert (
-            attribute_validator._check_cardinality_any(
+            cardinality_validator._check_cardinality_any(
                 21, interval, "test", "pid", result
             )
             is False
         )
 
-    def test_check_interval_empty(self, attribute_validator: AttributeValidator):
+    def test_check_interval_empty(self, cardinality_validator: CardinalityValidator):
         """Test empty interval (should accept nothing)."""
         interval = ""
         result = ValidationResult()
 
         assert (
-            attribute_validator._check_cardinality_any(
+            cardinality_validator._check_cardinality_any(
                 999, interval, "test", "pid", result
             )
             is False
         )
         assert (
-            attribute_validator._check_cardinality_any(
+            cardinality_validator._check_cardinality_any(
                 -999, interval, "test", "pid", result
             )
             is False
