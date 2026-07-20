@@ -65,6 +65,10 @@ def profile_validator(
 ) -> ProfileValidator:
     return ProfileValidator(registry, logger, profiles_assembly, extensions_assembly)
 
+@pytest.fixture
+def attribute_validator(logger, registry, attribute_assembly):
+    return AttributeValidator(registry, logger, attribute_assembly)
+
 
 @pytest.fixture
 def minimal_record() -> PidRecord:
@@ -285,6 +289,82 @@ class TestProfileValidator:
         assert "0.FDO/Profile" in required
         assert "0.FDO/Data" in required
 
+class TestOptionalAttributesInProfiles:
+    """
+    Test validation of optional attributes given in profiles, using profile validation.
+    """
+
+    def test_profile_has_optional_attribute(
+        self,
+        profiles_assembly: ProfilesAssembly,
+        attribute_assembly: AttributeAssembly,
+        attribute_validator: AttributeValidator,
+    ):
+        """Test that the profile we use in these test has the optional attribute."""
+        optional_attribute = "0.FDO/Description"
+        rules = attribute_assembly.assemble_rules(optional_attribute)
+        assert rules
+        zero_values = []
+        result = attribute_validator._validate_attribute(
+            attr_name=optional_attribute,
+            values=zero_values,
+            record_pid="test",
+            record=PidRecord(pid="test", data={}, source_pid="test"),
+        )
+        # We check that the attribute allows no / zero values.
+        assert result.valid is True
+
+        # And now check that the profile actually uses the optional attribute.
+        profile = profiles_assembly.assemble("0.FDO/ProfileDef")
+        assert profile
+        assert optional_attribute in profile.record.data.keys()
+
+
+
+    def test_validate_with_optional_attribute(
+        self,
+        profile_validator: ProfileValidator,
+    ):
+        """Test validation when an optional attribute is present."""
+        record = PidRecord(
+            pid="test",
+            data={
+                "0.FDO/Profile": ["extending-profile"],
+                "0.FDO/Type": ["FDO_Profile"],
+                "0.FDO/Data": ["Not_Applicable"],
+                "0.FDO/Name": [{"0.FDO/StringSyntax": "test", "0.FDO/LocalizedStringSyntax": "en"}],
+                "0.FDO/Description": [{"0.FDO/StringSyntax": "desc", "0.FDO/LocalizedStringSyntax": "en"}],
+                "0.FDO/ReferenceNull": ["asdf"],
+                "0.FDO/Attribute": ["0.FDO/ReferenceNull"]
+            },
+            source_pid="test",
+        )
+
+        result = profile_validator.validate(record)
+
+        assert result.errors == []
+        assert result.valid is True
+
+    def test_validate_without_optional_attribute(
+        self,
+        profile_validator: ProfileValidator,
+    ):
+        """Test validation when an optional attribute is not present."""
+        record = PidRecord(
+            pid="test",
+            data={
+                "0.FDO/Profile": ["extending-profile"],
+                "0.FDO/Type": ["FDO_Profile"],
+                "0.FDO/Data": ["Not_Applicable"],
+                "0.FDO/Name": [{"0.FDO/StringSyntax": "test", "0.FDO/LocalizedStringSyntax": "en"}],
+            },
+            source_pid="test",
+        )
+
+        result = profile_validator.validate(record)
+
+        assert result.errors == []
+        assert result.valid is True
 
 # =============================================================================
 # TestProfileValidatorIntegration - Integration with real profiles
