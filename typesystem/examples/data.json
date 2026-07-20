@@ -1,7 +1,7 @@
 {
-  "0.FDO/Type": ["FDO_Data"],
-  "0.FDO/Profile": ["extended-profile", "0.FDO/Root"],
-  "0.FDO/Data": ["https://example.com/data.bin"],
+  "0.FDO/Type": ["0.FDO/Profile"],
+  "0.FDO/Profile": ["extending-profile", "0.FDO/Root"],
+  "0.FDO/Data": ["0.FDO/ReferenceNull"],
   "0.FDO/Name": [
     {
       "0.FDO/StringSyntax": "Data FDO",
@@ -14,5 +14,5 @@
       "0.FDO/LanguageTag": "en"
     }
   ],
-  "added-attribute": ["my_value"]
+  "0.FDO/ReferenceNull": ["my_value"]
 }

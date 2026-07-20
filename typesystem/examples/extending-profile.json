@@ -14,6 +14,6 @@
       "0.FDO/LanguageTag": "en"
     }
   ],
-  "0.FDO/Attribute": ["added_attribute"],
+  "0.FDO/Attribute": ["0.FDO/ReferenceNull"],
   "0.FDO/Extends": ["0.FDO/ProfileDef"]
 }
