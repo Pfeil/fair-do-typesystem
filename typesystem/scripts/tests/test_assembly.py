@@ -50,7 +50,7 @@ class TestExtensionsAssembly:
         assert "0.FDO/Type" in result.all_attributes
         assert "0.FDO/Profile" in result.all_attributes
         assert "0.FDO/Data" in result.all_attributes
-        assert "added_attribute" in result.all_attributes
+        assert "0.FDO/ReferenceNull" in result.all_attributes
         assert not result.has_cycle
 
     def test_assemble_recursing_profile(self, assembly: ExtensionsAssembly):

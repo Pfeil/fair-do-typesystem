@@ -10,18 +10,18 @@
   ],
   "0.FDO/Name": [
     {
-      "value": "Number",
-      "lang": "en"
+      "0.FDO/StringSyntax": "Integer",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/Description": [
     {
-      "value": "Floating-point number data type. Represents real numbers including decimals. Follows IEEE 754 double-precision format.",
-      "lang": "en"
+      "0.FDO/StringSyntax": "Integer number data type. Represents whole numbers without fractional parts. Can be positive, negative, or zero.",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/PrimitiveDataType": [
-    "number"
+    "integer"
   ],
   "0.FDO/Regex": [],
   "0.FDO/NumericInterval": [],

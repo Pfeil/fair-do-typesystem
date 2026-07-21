@@ -43,8 +43,9 @@ def profile_validator(
     logger: ValidationLogger,
     profiles_assembly: ProfilesAssembly,
     extensions_assembly: ExtensionsAssembly,
+    attribute_assembly: AttributeAssembly,
 ) -> ProfileValidator:
-    return ProfileValidator(registry, logger, profiles_assembly, extensions_assembly)
+    return ProfileValidator(registry, logger, profiles_assembly, extensions_assembly, attribute_assembly)
 
 
 @pytest.fixture
@@ -76,4 +77,7 @@ class TestOverall:
             profile_result = profile_validator.validate(resolved)
             assert profile_result.valid, f"PID {pid} profile validation failed"
             attribute_result = attribute_validator.validate(resolved, pid)
+            assert attribute_result.errors == [], (
+                f"PID {pid} attribute validation failed: {attribute_result.errors}"
+            )
             assert attribute_result.valid, f"PID {pid} attribute validation failed"

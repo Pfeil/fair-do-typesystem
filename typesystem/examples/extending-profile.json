@@ -4,16 +4,16 @@
   "0.FDO/Data": ["Not_Applicable"],
   "0.FDO/Name": [
     {
-      "value": "ProfileDef Extension",
-      "lang": "en"
+      "0.FDO/StringSyntax": "ProfileDef Extension",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/Description": [
     {
-      "value": "A Profile with extension. As it extends ProfileDef, it is an extended declaration how profiles may look like.",
-      "lang": "en"
+      "0.FDO/StringSyntax": "A Profile with extension. As it extends ProfileDef, it is an extended declaration how profiles may look like.",
+      "0.FDO/LanguageTag": "en"
     }
   ],
-  "0.FDO/Attribute": ["added_attribute"],
+  "0.FDO/Attribute": ["0.FDO/ReferenceNull"],
   "0.FDO/Extends": ["0.FDO/ProfileDef"]
 }

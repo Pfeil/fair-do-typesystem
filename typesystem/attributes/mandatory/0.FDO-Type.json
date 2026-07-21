@@ -10,19 +10,24 @@
   ],
   "0.FDO/Name": [
     {
-      "value": "FDO Type",
-      "lang": "en"
+      "0.FDO/StringSyntax": "FDO Type",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/Description": [
     {
-      "value": "Specifies the type of the resource represented by the FDO. Gives a hint to a machine how this object may be processed. Can be repeated multiple times.",
-      "lang": "en"
+      "0.FDO/StringSyntax": "Specifies the type of the resource represented by the FDO. Gives a hint to a machine how this object may be processed. Can be repeated multiple times.",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/ValidationMechanism": [
-    "Syntax",
     "AttributeReference"
+  ],
+  "0.FDO/ReferenceNull": [
+    "FDO_Syntax_Definition",
+    "FDO_Attribute_Definition",
+    "FDO_Profile",
+    "FDO_Type_Definition"
   ],
   "0.FDO/DataType": [
     "0.FDO/StringSyntax"

@@ -10,14 +10,14 @@
   ],
   "0.FDO/Name": [
     {
-      "value": "Deny Additional Attributes",
-      "lang": "en"
+      "0.FDO/StringSyntax": "Deny Additional Attributes",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/Description": [
     {
-      "value": "This is an optional boolean flag indicating whether an FDO that instantiates the respective profile MUST NOT have additional attributes than those given by the profile. This restriction is only active if the value is set to a truthy boolean.",
-      "lang": "en"
+      "0.FDO/StringSyntax": "This is an optional boolean flag indicating whether an FDO that instantiates the respective profile MUST NOT have additional attributes than those given by the profile. This restriction is only active if the value is set to a truthy boolean.",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/ValidationMechanism": [

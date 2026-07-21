@@ -10,26 +10,24 @@
   ],
   "0.FDO/Name": [
     {
-      "value": "Primitive Data Type Syntax",
-      "lang": "en"
+      "0.FDO/StringSyntax": "Boolean",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/Description": [
     {
-      "value": "Defines the allowed primitive data type names. One of: string, number, integer, boolean. All of these primitives MUST be supported by all clients.",
-      "lang": "en"
+      "0.FDO/StringSyntax": "Boolean data type. Represents truth values: true or false.",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/PrimitiveDataType": [
-    "string"
+    "boolean"
   ],
   "0.FDO/Regex": [],
   "0.FDO/NumericInterval": [],
   "0.FDO/Whitelist": [
-    "string",
-    "number",
-    "integer",
-    "boolean"
+    true,
+    false
   ],
   "0.FDO/Blacklist": []
 }

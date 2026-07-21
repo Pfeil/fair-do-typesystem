@@ -4,14 +4,14 @@
   "0.FDO/Data": ["Not_Applicable"],
   "0.FDO/Name": [
     {
-      "value": "Must Extend Profile",
-      "lang": "en"
+      "0.FDO/StringSyntax": "Must Extend Profile",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/Description": [
     {
-      "value": "A profile forcing the instances to use the extends attribute.",
-      "lang": "en"
+      "0.FDO/StringSyntax": "A profile forcing the instances to use the extends attribute.",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/Attribute": ["0.FDO/Extends"],

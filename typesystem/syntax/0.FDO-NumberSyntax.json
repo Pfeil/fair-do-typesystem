@@ -10,24 +10,21 @@
   ],
   "0.FDO/Name": [
     {
-      "value": "Boolean",
-      "lang": "en"
+      "0.FDO/StringSyntax": "Number",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/Description": [
     {
-      "value": "Boolean data type. Represents truth values: true or false.",
-      "lang": "en"
+      "0.FDO/StringSyntax": "Floating-point number data type. Represents real numbers including decimals. Follows IEEE 754 double-precision format.",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/PrimitiveDataType": [
-    "boolean"
+    "number"
   ],
   "0.FDO/Regex": [],
   "0.FDO/NumericInterval": [],
-  "0.FDO/Whitelist": [
-    true,
-    false
-  ],
+  "0.FDO/Whitelist": [],
   "0.FDO/Blacklist": []
 }

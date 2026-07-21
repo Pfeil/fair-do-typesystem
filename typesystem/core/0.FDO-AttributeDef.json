@@ -4,14 +4,14 @@
   "0.FDO/Data": ["Not_Applicable"],
   "0.FDO/Name": [
     {
-      "value": "Attribute Definition Profile",
-      "lang": "en"
+      "0.FDO/StringSyntax": "Attribute Definition Profile",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/Description": [
     {
-      "value": "The profile that all attribute definitions must comply with. Defines the structure for creating new FDO attribute definitions.",
-      "lang": "en"
+      "0.FDO/StringSyntax": "The profile that all attribute definitions must comply with. Defines the structure for creating new FDO attribute definitions.",
+      "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/Attribute": [

@@ -10,13 +10,13 @@
   ],
   "0.FDO/Name": [
     {
-      "0.FDO/StringSyntax": "Regex",
+      "0.FDO/StringSyntax": "Validation Mechanism",
       "0.FDO/LanguageTag": "en"
     }
   ],
   "0.FDO/Description": [
     {
-      "0.FDO/StringSyntax": "Only applicable if 0.FDO/PrimitiveDataType is string. This regular expression in ECMA-252 syntax MUST be successfully validated for all attributes that use this syntax definition.",
+      "0.FDO/StringSyntax": "Specifies the validation mechanism for this attribute definition. One of: Syntax (see [R5-8]), Union (see [R5-9]), InlineCombination (see [R5-10]), AttributeReference, ProfileReference, or ExternalVocabularyReference.",
       "0.FDO/LanguageTag": "en"
     }
   ],
@@ -27,6 +27,6 @@
     "0.FDO/StringSyntax"
   ],
   "0.FDO/Cardinality": [
-    "0..1"
+    "0..*"
   ]
 }

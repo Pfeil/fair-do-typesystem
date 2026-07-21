@@ -21,7 +21,9 @@ classifiers = [
     "Topic :: Scientific/Engineering",
 ]
 
-dependencies = []
+dependencies = [
+    "jinja2>=3.1.6",
+]
 
 [dependency-groups]
 dev = [
@@ -31,6 +33,7 @@ dev = [
 
 [project.scripts]
 fdo-validate = "validate:main"
+fdo-generate-docs = "generate_docs:main"
 
 [build-system]
 requires = ["hatchling"]

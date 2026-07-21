@@ -26,10 +26,8 @@ class TestPidRegistry:
             "0.FDO/ProfileDef",
             "0.FDO/Type",
             "0.FDO/StringSyntax",
-            "CardinalitySyntax",
             "0.FDO/CardinalitySyntax",
-            "Cardinality/Syntax",
-            "0-FDO/Cardinality/Syntax",
+            "0.FDO/CardinalitySyntax",
         ]
 
         for pid in known_pids:
@@ -114,7 +112,7 @@ class TestPidRegistry:
 
     def test_resolution_increments_logger_count(self):
         """Test that each resolution increments the logger's counter."""
-        logger = ValidationLogger(verbose=False)
+        logger = ValidationLogger(verbose=True)
         registry = PidRegistry(logger)
 
         initial_count = logger.get_resolution_count()

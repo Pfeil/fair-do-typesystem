@@ -14,6 +14,7 @@ from models import (
     CycleDetected,
     ProfilesInfo,
     RecordProcessingError,
+    SyntaxRules,
     UnresolvablePid,
     ZeroProfilesContained,
 )
@@ -285,17 +286,29 @@ class AttributeAssembly:
             self.logger.log_step(
                 "Attribute Assembly", f"✗ Failed to resolve {attr_name}", indent=2
             )
-            return ValidationRules()
+            result = ValidationRules()
+            result.validation_result.add_error(UnresolvablePid(attr_name))
+            return result
 
         self.logger.log_step(
             "Attribute Definition",
             f"✓ Resolved {attr_name}",
             indent=2,
         )
+        return self.assemble_rules_by_record(attr_def, attr_name)
+
+    def assemble_rules_by_record(
+        self, attr_def: PidRecord, attr_name: str
+    ) -> ValidationRules:
+        """Assemble rules for an attribute within a specific record."""
 
         # Extract cardinality
         cardinality_vals: List[Any] = attr_def.get_values("0.FDO/Cardinality")
-        cardinality: Optional[str] = cardinality_vals[0] if cardinality_vals else None
+        cardinality: Optional[str] = (
+            cardinality_vals[0]
+            if cardinality_vals and len(cardinality_vals) > 0
+            else None
+        )
         if cardinality:
             self.logger.log_step(
                 "Cardinality",
@@ -304,14 +317,19 @@ class AttributeAssembly:
             )
 
         # Resolve syntax definition
-        syntax_refs: List[Any] = attr_def.get_values("0.FDO/DataType")
-        syntax_pid: Optional[str] = syntax_refs[0] if syntax_refs else None
+        syntax_refs: List[str] = attr_def.get_values("0.FDO/DataType")
 
         rules: ValidationRules = ValidationRules(
             cardinality=cardinality,
-            syntax_definition_pid=syntax_pid,
             validation_mechanisms=attr_def.get_values("0.FDO/ValidationMechanism"),
+            syntax_rules=[
+                self._extract_syntax_rules(syntax_ref) for syntax_ref in syntax_refs
+            ],
+            null_values=attr_def.get_values("0.FDO/ReferenceNull"),
         )
+
+        for rule in rules.syntax_rules:
+            rules.validation_result.merge(rule.validation_result)
 
         if rules.validation_mechanisms:
             self.logger.log_step(
@@ -320,34 +338,14 @@ class AttributeAssembly:
                 indent=2,
             )
 
-        # If syntax definition exists, extract its rules
-        if syntax_pid:
-            self.logger.log_step(
-                "Syntax Definition",
-                f"↓ Resolving syntax: {syntax_pid}",
-                indent=2,
-            )
-            syntax_def: Optional[PidRecord] = self.registry.resolve_pid(syntax_pid)
-            if syntax_def:
-                self._extract_syntax_rules(syntax_def, rules)
-            else:
-                self.logger.log_step(
-                    "Syntax Definition",
-                    f"✗ Failed to resolve {syntax_pid}",
-                    indent=3,
-                )
-
         self.logger.log_step(
             "Attribute Assembly",
-            f"✓ Complete: cardinality={rules.cardinality}, type={rules.primitive_type}",
+            f"✓ Complete: cardinality={rules.cardinality}, validation={', '.join(rules.validation_mechanisms)}",
             indent=1,
         )
-
         return rules
 
-    def _extract_syntax_rules(
-        self, syntax_def: PidRecord, rules: ValidationRules
-    ) -> None:
+    def _extract_syntax_rules(self, syntax_pid: str) -> SyntaxRules:
         """
         Extract validation rules from a syntax definition.
 
@@ -355,36 +353,56 @@ class AttributeAssembly:
         whitelist, and blacklist from the syntax definition.
 
         Args:
-            syntax_def: The resolved syntax definition record
+            syntax_pid: The PID to the syntax definition record
             rules: The ValidationRules object to populate
         """
+
+        rules = SyntaxRules(
+            syntax_pid=syntax_pid,
+        )
+
+        self.logger.log_step(
+            "Syntax Definition",
+            f"↓ Resolving syntax: {syntax_pid}",
+            indent=2,
+        )
+        syntax_def: Optional[PidRecord] = self.registry.resolve_pid(syntax_pid)
+        if not syntax_def:
+            self.logger.log_step(
+                "Syntax Definition",
+                f"✗ Failed to resolve {syntax_pid}",
+                indent=3,
+            )
+            rules.validation_result.add_error(UnresolvablePid(pid=syntax_pid))
+            return rules
+
         # Extract primitive data type
         type_vals: List[Any] = syntax_def.get_values("0.FDO/PrimitiveDataType")
-        rules.primitive_type = self._extract_single_value(type_vals)
-        if rules.primitive_type:
+        rules.primitive_types.extend(type_vals)
+        if len(rules.primitive_types) < 0:
             self.logger.log_step(
                 "Primitive Type",
-                f"Found: {rules.primitive_type}",
+                f"Found: {','.join(rules.primitive_types)}",
                 indent=3,
             )
 
         # Extract regex pattern
         regex_vals: List[Any] = syntax_def.get_values("0.FDO/Regex")
-        rules.regex = self._extract_single_value(regex_vals)
-        if rules.regex:
+        rules.regexes.extend(regex_vals)
+        if len(rules.regexes) > 0:
             self.logger.log_step(
                 "Regex",
-                f"Found: {rules.regex}",
+                f"Found: {','.join(rules.regexes)}",
                 indent=3,
             )
 
         # Extract numeric interval
         interval_vals: List[Any] = syntax_def.get_values("0.FDO/NumericInterval")
+        rules.numeric_intervals.extend(interval_vals)
         if interval_vals:
-            rules.numeric_interval = self._extract_single_value(interval_vals)
             self.logger.log_step(
                 "Numeric Interval",
-                f"Found: {rules.numeric_interval}",
+                f"Found: {','.join(rules.numeric_intervals)}",
                 indent=3,
             )
 
@@ -408,14 +426,4 @@ class AttributeAssembly:
                 indent=3,
             )
 
-    def _extract_single_value(self, values: List[Any]) -> Optional[Any]:
-        """
-        Get first value if exactly one exists.
-
-        Args:
-            values: List of values from an attribute
-
-        Returns:
-            The single value, or None if not exactly one value
-        """
-        return values[0] if len(values) == 1 else None
+        return rules

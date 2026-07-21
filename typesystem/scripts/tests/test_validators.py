@@ -10,8 +10,10 @@ import pytest
 
 from assembly import AttributeAssembly, ExtensionsAssembly, ProfilesAssembly
 from models import (
+    CardinalityViolation,
     MissingRequiredAttribute,
     PidRecord,
+    UnresolvablePid,
     ValidationResult,
     ZeroProfilesContained,
 )
@@ -61,8 +63,13 @@ def profile_validator(
     logger: ValidationLogger,
     profiles_assembly: ProfilesAssembly,
     extensions_assembly: ExtensionsAssembly,
+    attribute_assembly: AttributeAssembly,
 ) -> ProfileValidator:
-    return ProfileValidator(registry, logger, profiles_assembly, extensions_assembly)
+    return ProfileValidator(registry, logger, profiles_assembly, extensions_assembly, attribute_assembly)
+
+@pytest.fixture
+def attribute_validator(logger, registry, attribute_assembly):
+    return AttributeValidator(registry, logger, attribute_assembly)
 
 
 @pytest.fixture
@@ -163,7 +170,7 @@ class TestProfileValidator:
 
         assert result.valid is False
         assert len(result.errors) == 1
-        assert isinstance(result.errors[0], MissingRequiredAttribute)
+        assert isinstance(result.errors[0], CardinalityViolation)
 
     def test_validate_no_profile_reference(
         self,
@@ -284,6 +291,82 @@ class TestProfileValidator:
         assert "0.FDO/Profile" in required
         assert "0.FDO/Data" in required
 
+class TestOptionalAttributesInProfiles:
+    """
+    Test validation of optional attributes given in profiles, using profile validation.
+    """
+
+    def test_profile_has_optional_attribute(
+        self,
+        profiles_assembly: ProfilesAssembly,
+        attribute_assembly: AttributeAssembly,
+        attribute_validator: AttributeValidator,
+    ):
+        """Test that the profile we use in these test has the optional attribute."""
+        optional_attribute = "0.FDO/Description"
+        rules = attribute_assembly.assemble_rules(optional_attribute)
+        assert rules
+        zero_values = []
+        result = attribute_validator._validate_attribute(
+            attr_name=optional_attribute,
+            values=zero_values,
+            record_pid="test",
+            record=PidRecord(pid="test", data={}, source_pid="test"),
+        )
+        # We check that the attribute allows no / zero values.
+        assert result.valid is True
+
+        # And now check that the profile actually uses the optional attribute.
+        profile = profiles_assembly.assemble("0.FDO/ProfileDef")
+        assert profile
+        assert optional_attribute in profile.record.data.keys()
+
+
+
+    def test_validate_with_optional_attribute(
+        self,
+        profile_validator: ProfileValidator,
+    ):
+        """Test validation when an optional attribute is present."""
+        record = PidRecord(
+            pid="test",
+            data={
+                "0.FDO/Profile": ["extending-profile"],
+                "0.FDO/Type": ["FDO_Profile"],
+                "0.FDO/Data": ["Not_Applicable"],
+                "0.FDO/Name": [{"0.FDO/StringSyntax": "test", "0.FDO/LocalizedStringSyntax": "en"}],
+                "0.FDO/Description": [{"0.FDO/StringSyntax": "desc", "0.FDO/LocalizedStringSyntax": "en"}],
+                "0.FDO/ReferenceNull": ["asdf"],
+                "0.FDO/Attribute": ["0.FDO/ReferenceNull"]
+            },
+            source_pid="test",
+        )
+
+        result = profile_validator.validate(record)
+
+        assert result.errors == []
+        assert result.valid is True
+
+    def test_validate_without_optional_attribute(
+        self,
+        profile_validator: ProfileValidator,
+    ):
+        """Test validation when an optional attribute is not present."""
+        record = PidRecord(
+            pid="test",
+            data={
+                "0.FDO/Profile": ["extending-profile"],
+                "0.FDO/Type": ["FDO_Profile"],
+                "0.FDO/Data": ["Not_Applicable"],
+                "0.FDO/Name": [{"0.FDO/StringSyntax": "test", "0.FDO/LocalizedStringSyntax": "en"}],
+            },
+            source_pid="test",
+        )
+
+        result = profile_validator.validate(record)
+
+        assert result.errors == []
+        assert result.valid is True
 
 # =============================================================================
 # TestProfileValidatorIntegration - Integration with real profiles
@@ -347,7 +430,7 @@ class TestProfileValidatorIntegration:
         assert record
 
         # Data uses a profile making use of 0.FDO/Extends:
-        extending_profile_name: str = "extended-profile"
+        extending_profile_name: str = "extending-profile"
         logger.verbose = True
 
         result = profile_validator.validate(record)
@@ -366,10 +449,6 @@ class TestProfileValidatorIntegration:
 
 class TestAttributeValidator:
     """Test AttributeValidator validation functionality."""
-
-    @pytest.fixture
-    def attribute_validator(self, logger, registry, attribute_assembly):
-        return AttributeValidator(registry, logger, attribute_assembly)
 
     def test_attribute_validator_instantiation(
         self, attribute_validator: AttributeValidator
@@ -404,13 +483,40 @@ class TestAttributeValidator:
                 "0.FDO/Type": ["FDO_Profile"],
                 "0.FDO/Profile": ["0.FDO/Root"],
                 "0.FDO/Data": ["Not_Applicable"],
+                "0.FDO/ReferenceNull": ["hello"],
             },
             source_pid=pid,
         )
 
         result: ValidationResult = attribute_validator.validate(record, pid)
 
+        assert result.errors == []
         assert result.valid is True
+
+    def test_validate_with_undefined_attribute(
+        self, attribute_validator: AttributeValidator
+    ):
+        """Test undefined attributes cause errors."""
+
+        # Create a record with an undefined attribute
+        record: PidRecord = PidRecord(
+            pid="test/Undefined",
+            data={
+                "0.FDO/Type": ["FDO_Profile"],
+                "0.FDO/Profile": ["0.FDO/Root"],
+                "0.FDO/Data": ["Not_Applicable"],
+                "nonexisting": ["asd"],
+            },
+            source_pid="test/Undefined",
+        )
+
+        result: ValidationResult = attribute_validator.validate(
+            record, "test/Undefined"
+        )
+
+        assert len(result.errors) == 1
+        assert isinstance(result.errors[0], UnresolvablePid)
+        assert result.valid is False
 
     def test_validate_with_missing_attribute(
         self, attribute_validator: AttributeValidator
@@ -440,6 +546,7 @@ class TestAttributeValidator:
         assert result.errors == []
         assert result.profiles_checked == 0
         assert result.warnings == []
+        assert result.valid
 
     def test_fails_if_attribute_reference_not_in_record(
         self,

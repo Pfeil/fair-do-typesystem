@@ -1,0 +1,26 @@
+{
+  "0.FDO/Type": [
+    "FDO_Syntax_Definition"
+  ],
+  "0.FDO/Profile": [
+    "0.FDO/SyntaxDef"
+  ],
+  "0.FDO/Data": [
+    "Not_Applicable"
+  ],
+  "0.FDO/Name": [
+    {
+      "0.FDO/StringSyntax": "language indicator",
+      "0.FDO/LanguageTag": "en"
+    }
+  ],
+  "0.FDO/Description": [
+    {
+      "0.FDO/StringSyntax": "e.g. en or eng",
+      "0.FDO/LanguageTag": "en"
+    }
+  ],
+  "0.FDO/PrimitiveDataType": [
+    "string"
+  ]
+}
