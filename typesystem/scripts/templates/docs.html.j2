@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <style>
+        [data-toggle] { cursor: pointer; text-decoration: underline; }
+    </style>
+    <title>FDO Documentation</title>
+</head>
+<body>
+    <main class="container">
+        {% for pid, record in records.items() %}
+        <details id="{{ pid }}">
+            <summary><strong>{{ pid }}</strong></summary>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Attribute Definition</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for attr, value in record.data.items() %}
+                        {% set attr_desc = attribute_descriptions.get(attr) %}
+                        {% set values = value if value is iterable and value is not string else [value] %}
+                        {% for val in values %}
+                    <tr>
+                        {% if loop.first %}
+                            {% if attr_desc %}
+                            <td data-tooltip="{{ attr_desc }}" rowspan="{{ values|length }}">
+                                {{ attr }}
+                            </td>
+                            {% else %}
+                            <td rowspan="{{ values|length }}">{{ attr }}</td>
+                            {% endif %}
+                        {% endif %}
+                        <td>{{ val | format_value }}</td>
+                    </tr>
+                        {% endfor %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </details>
+        <hr />
+        {% endfor %}
+    </main>
+    <script>
+        // Wrap 0.FDO/* text in clickable anchors
+        document.querySelectorAll("td").forEach((cell) => {
+            const textNode = Array.from(cell.childNodes).find(
+                (node) => node.nodeType === Node.TEXT_NODE &&
+                          node.textContent.trim().startsWith("0.FDO/")
+            );
+            if (textNode) {
+                const text = textNode.textContent.trim();
+                const anchor = document.createElement("a");
+                anchor.textContent = text;
+                anchor.dataset.toggle = text;
+                cell.replaceChild(anchor, textNode);
+            }
+        });
+        // Make FDO links work
+        document.querySelectorAll("[data-toggle]").forEach((label) => {
+            label.addEventListener("click", () => {
+                const details = document.getElementById(label.dataset.toggle);
+                details.open = !details.open;
+                window.location.hash = label.dataset.toggle;
+            });
+        });
+        // Handle URL hash on load
+        if (window.location.hash) {
+            const id = window.location.hash.substring(1);
+            const element = document.getElementById(id);
+            if (element && element.tagName === "DETAILS") {
+                element.open = true;
+                element.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+        }
+    </script>
+</body>
+</html>
